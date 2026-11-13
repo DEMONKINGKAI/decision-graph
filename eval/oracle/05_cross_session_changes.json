@@ -1,0 +1,22 @@
+[
+ {
+  "decision": "Use bun as the package manager.",
+  "supersedes": "D-2",
+  "decided_by": "user",
+  "rationale": []
+ },
+ {
+  "decision": "Paid services are allowed.",
+  "supersedes": "D-3",
+  "decided_by": "user",
+  "rationale": [
+   "The project got a small grant."
+  ]
+ },
+ {
+  "decision": "The app uses CSS modules; Tailwind only for the marketing site.",
+  "supersedes": "D-1",
+  "decided_by": "user",
+  "rationale": []
+ }
+]

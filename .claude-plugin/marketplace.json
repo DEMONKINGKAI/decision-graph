@@ -1,0 +1,17 @@
+{
+  "name": "neuro-graph",
+  "owner": {
+    "name": "Kai (Archit Sharma)"
+  },
+  "plugins": [
+    {
+      "name": "decision-graph",
+      "source": "./",
+      "description": "Decision graph memory for Claude Code projects"
+    }
+  ],
+  "metadata": {
+    "description": "Decision Graph: records a project's decisions as a graph and gives them back to Claude after compaction."
+  },
+  "description": "Decision Graph: records a project's decisions as a graph and gives them back to Claude after compaction."
+}

@@ -1,0 +1,16 @@
+[
+ {
+  "decision": "Use Tailwind CSS for styling the dashboard.",
+  "decided_by": "assistant_accepted",
+  "rationale": [
+   "Fast to iterate on layouts with utility classes."
+  ]
+ },
+ {
+  "decision": "Use Vitest for testing.",
+  "decided_by": "assistant_accepted",
+  "rationale": [
+   "Shares the Vite config and is faster."
+  ]
+ }
+]

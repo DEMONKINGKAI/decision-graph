@@ -1,0 +1,12 @@
+{
+  "name": "decision-graph",
+  "displayName": "Decision Graph",
+  "version": "0.13.0",
+  "description": "Records the decisions made in a project's conversations as a graph (what replaced what, what rests on what) and brings them back after context is compacted or a new session starts.",
+  "author": {
+    "name": "Kai (Archit Sharma)",
+    "url": "https://github.com/DEMONKINGKAI"
+  },
+  "license": "MIT",
+  "keywords": ["memory", "decisions", "knowledge-graph", "compaction"]
+}

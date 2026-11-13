@@ -1,0 +1,24 @@
+[
+ {
+  "decision": "Use Postgres.",
+  "rationale": [
+   "Multiple concurrent write accesses."
+  ],
+  "decided_by": "user"
+ },
+ {
+  "decision": "Deploy directly on Render without Docker at first.",
+  "decided_by": "user",
+  "rationale": []
+ },
+ {
+  "decision": "Use REST for the API.",
+  "alternatives_rejected": [
+   "GraphQL"
+  ],
+  "decided_by": "assistant_accepted",
+  "rationale": [
+   "REST is simpler for an internal tool with few clients."
+  ]
+ }
+]

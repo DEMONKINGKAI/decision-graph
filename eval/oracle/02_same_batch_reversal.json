@@ -1,0 +1,23 @@
+[
+ {
+  "key": "n1",
+  "decision": "Users log in with email and password.",
+  "decided_by": "user",
+  "rationale": []
+ },
+ {
+  "key": "n2",
+  "decision": "Use Postgres for storage.",
+  "decided_by": "user",
+  "rationale": []
+ },
+ {
+  "key": "n3",
+  "decision": "Login uses magic links only, replacing email and password.",
+  "supersedes": "n1",
+  "decided_by": "user",
+  "rationale": [
+   "The user doesn't want to store passwords."
+  ]
+ }
+]

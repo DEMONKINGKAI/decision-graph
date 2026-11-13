@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decisions · __TITLE__</title>
+<style>
+/* ==================================================================== tokens
+   An observatory for a project's reasoning: a deep cobalt-gray night field, decisions as ivory
+   cards lit by soft azure light, links drawn in light. Header and panel stay calm ivory paper. */
+:root {
+  --ivory: #FBF8EF;  --paper: #FFFEF9;  --paper-2: #F3EFE2;  --paper-edge: #E6E1D2;
+  --cobalt: #3A4556; --cobalt-soft: #6E7889; --cobalt-mist: #A7B0BE;
+  --night-1: #2B3442; --night-2: #212833; --night-3: #171C24;
+  --azure: #8EC2EC;  --azure-hi: #B9DBF6; --azure-deep: #4A86C0; --azure-wash: #E6F1FB;
+  --brick: #C26A5E;  --brick-hi: #E39486; --brick-wash: #F8E9E4;
+  --ochre: #BF9447;  --ochre-hi: #E2BC72; --ochre-wash: #F7EFDD;
+  --ink: var(--cobalt); --muted: var(--cobalt-soft); --line: #E2DDCF;
+  --chrome: var(--ivory); --chrome-2: var(--paper);
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --sans: "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --spring: cubic-bezier(.34, 1.45, .64, 1);
+  --card-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 2px 4px rgba(8, 12, 18, .25), 0 14px 34px rgba(8, 12, 18, .35);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --chrome: #1E242E; --chrome-2: #242B36; --ink: #F3EFE3; --muted: #A5AEBD; --line: #353E4C;
+          --azure-wash: #22344A; --brick-wash: #3A2A2A; --ochre-wash: #3A3224; }
+}
+@property --spin { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--night-2); color: var(--ink); font: 14px/1.5 var(--sans);
+  -webkit-font-smoothing: antialiased; overflow: hidden; }
+button, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--azure-deep); outline-offset: 2px; }
+
+/* ==================================================================== shapes: what a decision is, at a glance */
+/* foundation: things rest on it, it rests on nothing -> an elongated hexagon */
+.card[data-shape=hex] { filter: drop-shadow(0 10px 16px rgba(8,12,18,.42)) drop-shadow(0 2px 3px rgba(8,12,18,.25)); }
+.card[data-shape=hex] .face { clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 18px 100%, 0 50%);
+  border-radius: 0; border: 0; padding: 12px 30px 13px 30px; box-shadow: none !important;
+  background: linear-gradient(165deg, #FFFEFA 0%, #F7F2E4 60%, #EDE6D3 100%); }
+.card[data-shape=hex] .face::before { left: 0; right: 0; top: 0; bottom: auto; width: auto; height: 4px; }
+.card[data-shape=hex]:hover .face::before { width: auto; height: 6px; }
+.card[data-shape=hex].sel, .card[data-shape=hex].up, .searching .card[data-shape=hex].hit, .card[data-shape=hex].is-new {
+  filter: drop-shadow(0 0 1.5px var(--azure)) drop-shadow(0 0 1.5px var(--azure)) drop-shadow(0 0 14px rgba(142,194,236,.55)) drop-shadow(0 12px 18px rgba(8,12,18,.45)); }
+.card[data-shape=hex].down { filter: drop-shadow(0 0 1.5px #C9D6EA) drop-shadow(0 0 1.5px #C9D6EA) drop-shadow(0 0 12px rgba(201,214,234,.4)); }
+.card[data-shape=hex][data-s=stale] { filter: drop-shadow(0 0 1.5px var(--brick)) drop-shadow(0 0 16px rgba(227,148,134,.45)) drop-shadow(0 10px 16px rgba(8,12,18,.42)); }
+.card.sel[data-shape=hex]::before, .card.sel[data-shape=hex]::after { display: none; }
+.fan { font-size: 10.5px; font-weight: 650; color: var(--azure-deep); white-space: nowrap; }
+/* standalone: nothing rests on it and it rests on nothing -> a capsule */
+.card[data-shape=capsule] .face { border-radius: 999px; padding: 11px 24px 12px 30px; }
+.card[data-shape=capsule] .face::before { left: 13px; top: 28%; bottom: 28%; width: 4px; border-radius: 4px; }
+.card[data-shape=capsule]:hover .face::before { width: 5px; }
+.card[data-shape=capsule] .txt { -webkit-line-clamp: 2; }
+.card.sel[data-shape=capsule]::before { border-radius: 999px; } .card.sel[data-shape=capsule]::after { border-radius: 999px; }
+/* replaced or rejected: a ticket with notched sides, kept for the record */
+.card[data-shape=ticket] .face { -webkit-mask: radial-gradient(circle 9px at 0 50%, transparent 97%, #000) left / 51% 100% no-repeat,
+  radial-gradient(circle 9px at 100% 50%, transparent 97%, #000) right / 51% 100% no-repeat;
+  mask: radial-gradient(circle 9px at 0 50%, transparent 97%, #000) left / 51% 100% no-repeat,
+  radial-gradient(circle 9px at 100% 50%, transparent 97%, #000) right / 51% 100% no-repeat; padding-left: 22px; }
+/* sub-decisions plug into what they rest on: small ports where the links meet the card */
+.port { position: absolute; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; z-index: 2; pointer-events: none;
+  background: var(--night-2); border: 2px solid rgba(185, 219, 246, .9); box-shadow: 0 0 8px rgba(142,194,236,.5); }
+.port.in { left: -6px; } .port.out { right: -6px; }
+.card[data-s=stale] .port.in { border-color: var(--brick-hi); box-shadow: 0 0 8px rgba(227,148,134,.6); }
+#world.far .port { transform: scale(1.6); }
+/* families: a foundation and everything that rests on it */
+.family { position: absolute; border-radius: 26px; border: 1px solid rgba(185, 219, 246, .16); pointer-events: none;
+  background: linear-gradient(160deg, rgba(142, 194, 236, .07), rgba(142, 194, 236, .02) 60%, rgba(23, 28, 36, .05));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04); animation: fade .9s var(--ease) .2s both; }
+/* the title scales as one piece (id, text, fold arrow, all in em) and never leaves its box */
+.family .ftitle { position: absolute; left: 18px; right: 14px; top: 10px; height: 30px; display: flex; align-items: center; gap: .55em;
+  pointer-events: none; font: italic 15px var(--serif); color: rgba(251, 248, 239, .74); white-space: nowrap; }
+.family .ftitle b { flex: none; font: 600 .77em var(--sans); font-style: normal; color: var(--azure-hi); letter-spacing: .02em; }
+.family .ftitle .ftxt { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.family .ftitle button { all: unset; flex: none; pointer-events: auto; cursor: pointer; width: 1.45em; height: 1.45em; border-radius: .45em;
+  display: grid; place-items: center; color: #DCE6F2; background: rgba(142,194,236,.14); font: .8em var(--sans); font-style: normal; }
+.family .ftitle button:hover { background: rgba(142,194,236,.3); }
+.family .ftitle button:focus-visible { outline: 2px solid var(--azure); outline-offset: 2px; }
+#world.far .family .ftitle { font-size: clamp(15px, calc(12px * var(--inv, 1)), 23px); }
+path.e.cross { opacity: .28; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; height: 34px; }
+.seg button { all: unset; cursor: pointer; padding: 0 12px; font: 13px var(--sans); color: var(--muted); display: grid; place-items: center; }
+.seg button[aria-pressed=true] { background: var(--azure-wash); color: var(--azure-deep); font-weight: 600; }
+.seg button:focus-visible { outline: 2px solid var(--azure); outline-offset: -2px; }
+@media (prefers-color-scheme: dark) { .seg button[aria-pressed=true] { background: rgba(142,194,236,.18); color: var(--azure-hi); } }
+
+/* ==================================================================== tools: area filter, list, palette, timeline, export */
+.tool { height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--chrome-2); color: var(--ink);
+  font: 13px var(--sans); padding: 0 12px; cursor: pointer; }
+.tool:hover { border-color: var(--azure); }
+.tool:focus-visible, .zoom button:focus-visible, #timeline button:focus-visible, #list button:focus-visible { outline: 2px solid var(--azure); outline-offset: 2px; }
+select.tool { padding-right: 8px; }
+kbd { font: 11px var(--sans); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--line); background: var(--chrome-2); }
+.tag { font-size: 10.5px; color: var(--cobalt-soft); border: 1px solid rgba(58,69,86,.18); padding: 0 6px; border-radius: 99px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+.newmark.changed { color: #8A6A2E; background: #F6ECD8; }
+#palette { position: fixed; inset: 0; z-index: 30; background: rgba(10, 14, 20, .45); backdrop-filter: blur(3px); }
+#palette .box { width: min(640px, 92vw); margin: 12vh auto 0; border-radius: 16px; background: var(--chrome); border: 1px solid var(--line);
+  box-shadow: 0 30px 80px rgba(0,0,0,.45); overflow: hidden; animation: rise-sm .25s var(--ease) both; }
+#palq { width: 100%; box-sizing: border-box; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink);
+  font: 18px var(--serif); padding: 18px 20px; outline: none; }
+#palres { list-style: none; margin: 0; padding: 6px; max-height: 50vh; overflow: auto; }
+#palres li { display: flex; gap: 12px; align-items: baseline; padding: 9px 12px; border-radius: 10px; cursor: pointer; }
+#palres li.on { background: color-mix(in srgb, var(--azure) 18%, transparent); }
+#palres .pid { font: 600 12px var(--sans); color: var(--muted); min-width: 38px; }
+#palres .ptxt { flex: 1; font: 15px/1.4 var(--serif); }
+#palres .pst { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+#palres .none { color: var(--muted); cursor: default; }
+#palette .foot { padding: 8px 16px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); }
+#list { position: absolute; inset: 0; z-index: 6; overflow: auto; background: var(--chrome); color: var(--ink); padding: 18px 26px 40px; }
+#list .count { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+#list table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+#list th { position: sticky; top: -18px; background: var(--chrome); text-align: left; border-bottom: 1px solid var(--line); padding: 0; z-index: 1; }
+#list th button { all: unset; display: block; padding: 10px 10px; font-weight: 650; font-size: 12.5px; color: var(--muted); cursor: pointer; }
+#list th button:hover { color: var(--ink); }
+#list td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+#list tbody tr { cursor: pointer; }
+#list tbody tr:hover, #list tbody tr:focus-visible { background: color-mix(in srgb, var(--azure) 10%, transparent); outline: none; }
+#list tbody tr.sel { background: color-mix(in srgb, var(--azure) 20%, transparent); }
+#list td.dec { font: 15px/1.4 var(--serif); }
+#list td.id { font-weight: 650; white-space: nowrap; }
+#list .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+#list td.muted { color: var(--muted); white-space: nowrap; }
+body:not(.listing) #list { display: none; }
+[hidden] { display: none !important; }
+#timeline { left: 76px; right: 250px; bottom: 18px; margin: 0 auto; max-width: 640px; display: flex; align-items: center; gap: 12px;
+  padding: 8px 16px 8px 8px; color: #DCE6F2; font-size: 12.5px; animation: rise-sm .8s var(--ease) 1.2s both; }
+#timeline button { width: 34px; height: 34px; border: 0; border-radius: 9px; background: rgba(142,194,236,.16); color: #fff; cursor: pointer; font-size: 13px; flex: none; }
+#timeline button:hover { background: rgba(142,194,236,.3); }
+#timeline input { flex: 1; accent-color: var(--azure); min-width: 80px; }
+#tll { white-space: nowrap; min-width: 150px; text-align: right; font-variant-numeric: tabular-nums; }
+body.timetravel #timeline { box-shadow: 0 0 0 1.5px var(--ochre), 0 10px 30px rgba(0,0,0,.35); }
+body.timetravel #tll { color: #F2D9A6; }
+#expmenu { left: 64px; bottom: 82px; z-index: 9; padding: 6px; display: flex; flex-direction: column; gap: 2px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.45); }
+#expmenu button { border: 0; background: transparent; color: #DCE6F2; text-align: left; padding: 8px 12px; border-radius: 8px; cursor: pointer; font: 13px var(--sans); }
+#expmenu button:hover { background: rgba(142,194,236,.18); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 860px) { #timeline { right: 16px; } #tll { min-width: 0; } }
+
+/* ==================================================================== header (ivory paper) */
+header { position: relative; z-index: 5; display: flex; align-items: center; gap: 22px; padding: 14px 24px; flex-wrap: wrap;
+  background: var(--chrome); border-bottom: 1px solid var(--line); box-shadow: 0 8px 30px rgba(8, 12, 18, .18);
+  animation: drop .8s var(--ease) both; }
+.title h1 { margin: 0; font: 600 21px/1.15 var(--serif); letter-spacing: -.012em; }
+.title h1 span { background: linear-gradient(100deg, var(--azure-deep), var(--azure) 60%, var(--azure-deep)); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 6s ease-in-out infinite; }
+.title .sub { color: var(--muted); font-size: 12.5px; margin-top: 2px; display: inline; }
+.snapnote { color: var(--muted); font-size: 12.5px; }
+.snapnote code { font-size: 12px; padding: 1px 5px; border-radius: 4px; background: rgba(142,194,236,.14); }
+.stats { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px 5px 10px; border-radius: 99px; border: 1px solid var(--line);
+  background: var(--chrome-2); cursor: pointer; font-size: 12.5px; user-select: none; animation: rise-sm .6s var(--ease) both;
+  transition: background .25s var(--ease), border-color .25s, transform .3s var(--spring), box-shadow .25s; }
+.chip:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(58, 69, 86, .12); }
+.chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--azure); box-shadow: 0 0 0 3px color-mix(in srgb, var(--azure) 25%, transparent); }
+.chip[data-s=stale] i { background: var(--brick); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brick) 22%, transparent); }
+.chip[data-s=indirect] i { background: var(--ochre); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ochre) 22%, transparent); }
+.chip[data-s=resolved] i { background: var(--azure-deep); }
+.chip b { font-weight: 650; font-variant-numeric: tabular-nums; }
+.chip.on { background: var(--cobalt); border-color: var(--cobalt); color: var(--ivory); }
+.spacer { flex: 1; }
+.search { position: relative; }
+.search input { width: 250px; padding: 8px 12px 8px 33px; border-radius: 11px; border: 1px solid var(--line); background: var(--chrome-2);
+  transition: width .45s var(--ease), border-color .2s, box-shadow .3s; }
+.search input:focus { width: 320px; outline: none; border-color: var(--azure); box-shadow: 0 0 0 4px color-mix(in srgb, var(--azure) 35%, transparent); }
+.search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; stroke: var(--muted); }
+.switch { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; font-size: 13px; color: var(--muted); }
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+.switch .track { width: 36px; height: 21px; border-radius: 99px; background: var(--line); position: relative; transition: background .35s var(--ease); }
+.switch .track::after { content: ""; position: absolute; top: 2.5px; left: 2.5px; width: 16px; height: 16px; border-radius: 50%; background: var(--paper);
+  box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .45s var(--spring), width .2s; }
+.switch:active .track::after { width: 20px; }
+.switch input:checked + .track { background: linear-gradient(90deg, var(--azure-deep), var(--azure)); }
+.switch input:checked + .track::after { transform: translateX(15px); }
+.switch input:focus-visible + .track { outline: 2px solid var(--azure-deep); outline-offset: 2px; }
+
+/* ==================================================================== the night field */
+main { display: flex; height: calc(100% - 71px); }
+#stage { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#stage #list { -webkit-user-select: text; user-select: text; }
+#stage { flex: 1; position: relative; overflow: hidden; overflow: clip; cursor: grab; touch-action: none; isolation: isolate;
+  background: radial-gradient(140% 120% at 30% 10%, var(--night-1), var(--night-2) 55%, var(--night-3)); }
+#stage.dragging { cursor: grabbing; }
+.aurora { position: absolute; inset: -20%; z-index: -2; pointer-events: none; filter: blur(60px); opacity: .55; }
+.aurora i { position: absolute; border-radius: 50%; mix-blend-mode: screen; }
+.aurora i:nth-child(1) { width: 55%; height: 45%; left: 5%; top: 8%; background: radial-gradient(closest-side, rgba(142,194,236,.55), transparent); animation: drift-a 26s ease-in-out infinite alternate; }
+.aurora i:nth-child(2) { width: 45%; height: 50%; right: 4%; top: 30%; background: radial-gradient(closest-side, rgba(74,134,192,.55), transparent); animation: drift-b 32s ease-in-out infinite alternate; }
+.aurora i:nth-child(3) { width: 40%; height: 35%; left: 35%; bottom: 0; background: radial-gradient(closest-side, rgba(185,219,246,.30), transparent); animation: drift-c 38s ease-in-out infinite alternate; }
+.grid { position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .9;
+  background-image: radial-gradient(rgba(251,248,239,.10) 1px, transparent 1.4px); background-size: 24px 24px; }
+.grid.far { opacity: .5; background-image: radial-gradient(rgba(185,219,246,.10) 1.2px, transparent 1.6px); background-size: 72px 72px; }
+.spot { position: absolute; z-index: -1; width: 560px; height: 560px; left: 0; top: 0; pointer-events: none; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(142,194,236,.14), transparent); transform: translate(var(--sx, -999px), var(--sy, -999px));
+  transition: opacity .6s; mix-blend-mode: screen; }
+#stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(120% 95% at 50% 45%, transparent 60%, rgba(10, 14, 20, .55)); }
+#world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+#edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+#edges path.e { pointer-events: visibleStroke; }
+
+/* ==================================================================== cards: ivory paper floating in the field */
+.card { position: absolute; width: 264px; perspective: 900px; transition: transform .8s var(--ease), filter .5s var(--ease), opacity .5s var(--ease); }
+.face { position: relative; height: 100%; box-sizing: border-box; padding: 12px 15px 14px 18px; border-radius: 14px; cursor: pointer; overflow: hidden;
+  background: linear-gradient(165deg, var(--paper) 0%, var(--ivory) 70%, var(--paper-2) 100%);
+  border: 1px solid rgba(255, 255, 255, .7); box-shadow: var(--card-shadow); color: var(--cobalt);
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateZ(0);
+  transition: transform .5s var(--ease), box-shadow .5s var(--ease), opacity .5s var(--ease);
+  animation: emerge 1s var(--ease) both; animation-delay: var(--d, 0ms); }
+.face::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--azure); transition: width .35s var(--ease); }
+.face .sheen { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .4s;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.75), transparent 45%); mix-blend-mode: soft-light; }
+.card:hover .face { box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 6px 10px rgba(8,12,18,.25), 0 26px 50px rgba(8,12,18,.45), 0 0 0 1px rgba(185,219,246,.5); }
+.card:hover .face .sheen { opacity: 1; }
+.card:hover .face::before { width: 6px; }
+.meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 11.5px; color: var(--cobalt-soft); }
+.cid { font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.mine { color: var(--azure-deep); font-weight: 700; }
+.pill { margin-left: auto; font-size: 11px; font-weight: 600; padding: 1px 8px 1px 7px; border-radius: 99px; display: inline-flex; align-items: center; gap: 5px; }
+.pill i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.txt { margin: 0; font: 15.5px/1.38 var(--serif); color: var(--cobalt); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.card[data-s=stale] .face::before { background: var(--brick); }
+.card[data-s=stale] .pill { color: var(--brick); background: var(--brick-wash); }
+.card[data-s=stale] .face { box-shadow: var(--card-shadow), 0 0 0 1px rgba(194,106,94,.35), 0 0 28px rgba(227,148,134,.28); animation: emerge 1s var(--ease) both, ember 3.2s ease-in-out 1.2s infinite; animation-delay: var(--d, 0ms), calc(var(--d, 0ms) + 1.2s); }
+.card[data-s=stale] .pill i { animation: beat 2.4s ease-in-out infinite; }
+.card[data-s=indirect] .face::before { background: var(--ochre); }
+.card[data-s=indirect] .pill { color: #9A7432; background: var(--ochre-wash); }
+.card[data-s=resolved] .face::before { background: var(--azure-deep); }
+.card[data-s=resolved] .pill { color: var(--azure-deep); background: var(--azure-wash); }
+.card[data-s=replaced] .face, .card[data-s=rejected] .face { background: linear-gradient(165deg, #E4DFD3 0%, #D7D1C3 100%);
+  border: 1.5px dashed rgba(58, 69, 86, .4); box-shadow: 0 2px 8px rgba(8, 12, 18, .32); }
+.card[data-s=replaced] .txt, .card[data-s=rejected] .txt { color: #4B5566; }
+.card[data-s=replaced] .meta, .card[data-s=rejected] .meta { color: #5C6676; }
+.card[data-s=replaced] .face::before { background: repeating-linear-gradient(180deg, #8A93A2 0 6px, transparent 6px 10px); }
+.card[data-s=replaced] .pill { color: #3F4A5B; background: rgba(58, 69, 86, .12); }
+.card[data-s=rejected] .face::before { background: var(--brick-hi); opacity: .6; }
+.card[data-s=rejected] .txt { text-decoration: line-through; text-decoration-color: rgba(227, 148, 134, .7); }
+.card[data-s=rejected] .pill { color: #A4493D; background: rgba(194, 106, 94, .16); }
+.card[data-s=rejected] .face::before { background: repeating-linear-gradient(180deg, var(--brick) 0 6px, transparent 6px 10px); opacity: 1; }
+
+/* selection: a slowly turning azure halo, and the rest of the field recedes */
+.card.sel { z-index: 3; }
+.card.sel .face { transform: translateY(-4px) scale(1.035); box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 30px 60px rgba(8,12,18,.5), 0 0 40px rgba(142,194,236,.45); }
+.card.sel::before { content: ""; position: absolute; inset: -3px; border-radius: 17px; z-index: -1; transform: translateY(-4px) scale(1.035);
+  background: conic-gradient(from var(--spin), var(--azure-deep), var(--azure-hi), var(--azure), var(--azure-deep), var(--azure-hi), var(--azure-deep));
+  animation: spin 5s linear infinite, fade .5s var(--ease) both; filter: blur(.5px); }
+.card.sel::after { content: ""; position: absolute; inset: -18px; border-radius: 28px; z-index: -2; transform: translateY(-4px);
+  background: radial-gradient(closest-side, rgba(142,194,236,.35), transparent); animation: breathe 3.6s ease-in-out infinite; }
+.card.up .face { box-shadow: var(--card-shadow), 0 0 0 2px var(--azure), 0 0 26px rgba(142,194,236,.45); }
+.card.down .face { box-shadow: var(--card-shadow), 0 0 0 2px #C9D6EA, 0 0 22px rgba(201,214,234,.35); }
+.dim .card:not(.sel):not(.up):not(.down) { filter: blur(1.1px) saturate(.45); opacity: .34; transform: scale(.965); }
+.searching .card:not(.hit) { opacity: .22; filter: blur(1px) saturate(.4); }
+.searching .card.hit .face { box-shadow: var(--card-shadow), 0 0 0 2px var(--azure), 0 0 24px rgba(142,194,236,.4); }
+.card.folding { animation: fold .55s var(--ease) forwards; }
+.newmark { color: var(--azure-deep); background: var(--azure-wash); font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 99px;
+  letter-spacing: .02em; animation: glint 2.6s ease-in-out 3; }
+.card.is-new .face { box-shadow: var(--card-shadow), 0 0 0 1.5px rgba(142,194,236,.7), 0 0 30px rgba(142,194,236,.35); }
+.chip[data-s=new] i { background: var(--azure-hi); box-shadow: 0 0 0 3px rgba(142,194,236,.35), 0 0 10px rgba(142,194,236,.8); }
+#empty { position: absolute; inset: 0 0 8% 0; margin: auto; height: fit-content; z-index: 3; width: min(520px, 86%); text-align: center;
+  color: var(--ivory); animation: rise-sm 1s var(--ease) .4s both; }
+#empty .orb { width: 74px; height: 74px; margin: 0 auto 22px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, var(--azure-hi) 30%, var(--azure-deep) 70%, transparent 72%);
+  box-shadow: 0 0 60px rgba(142,194,236,.55); animation: breathe-orb 4.5s ease-in-out infinite; }
+#empty h2 { font: 500 30px/1.2 var(--serif); margin: 0 0 12px; letter-spacing: -.01em; }
+#empty p { margin: 0 auto 10px; max-width: 46ch; color: rgba(251,248,239,.78); font-size: 15px; line-height: 1.6; }
+#empty code { background: rgba(142,194,236,.16); color: #fff; padding: 2px 7px; border-radius: 6px; font-size: 13.5px; }
+#empty .live { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--azure-hi); }
+#empty .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--azure); animation: beat 2s ease-in-out infinite; }
+/* zoomed out: cards become headlines whose text stays a readable size on screen */
+#world.far .face { padding: 9px 12px 9px 16px; }
+#world.far .meta .pill, #world.far .meta .mine, #world.far .sheen { display: none; }
+#world.far .meta { font-size: clamp(11.5px, calc(9px * var(--inv, 1)), 14px); line-height: 1.2; margin-bottom: 3px; }
+#world.far .meta .cid { font-weight: 700; }
+#world.far .txt { font-size: clamp(15.5px, calc(12.5px * var(--inv, 1)), 24px); line-height: 1.16; -webkit-line-clamp: 2; }
+#world.far .card[data-lines="1"] .txt { -webkit-line-clamp: 1; }
+#world.far .section { font-size: clamp(15px, calc(12px * var(--inv, 1)), 30px); }
+#world.far .card[data-s=replaced] .meta::after { content: "replaced"; font-style: italic; font-weight: 400; }
+#world.far .card[data-s=rejected] .meta::after { content: "rejected"; font-style: italic; font-weight: 400; }
+.section { position: absolute; transform: translateY(-100%); font: italic 15px var(--serif); color: rgba(251, 248, 239, .62); white-space: nowrap; animation: fade 1.2s var(--ease) .9s both; letter-spacing: .01em; }
+.section::before { content: ""; display: inline-block; width: 26px; height: 1px; margin-right: 10px; vertical-align: middle; background: rgba(185, 219, 246, .5); }
+
+/* ==================================================================== links drawn in light */
+path.e { fill: none; stroke: rgba(251, 248, 239, .38); stroke-width: 1.6; stroke-linecap: round;
+  transition: stroke .4s, stroke-width .4s var(--ease), opacity .5s var(--ease); }
+path.e.supersedes { stroke-dasharray: 6 6; stroke: rgba(251, 248, 239, .22); }
+path.e.restores { stroke-dasharray: 1.5 6; stroke: var(--azure); stroke-width: 2.2; filter: url(#glow); }
+path.e.via-replaced { stroke: var(--brick-hi); stroke-dasharray: 8 6; stroke-width: 2; filter: url(#glow-warm); }
+path.e.via-restored { stroke: var(--azure); stroke-dasharray: 1.5 6; stroke-width: 2.4; filter: url(#glow); }
+path.e.dead { stroke: var(--brick-hi); }
+path.e.hov { stroke: var(--azure-hi); stroke-width: 2.4; opacity: 1; filter: url(#glow); }
+path.e.via-replaced.hov, path.e.dead.hov { stroke: var(--brick-hi); stroke-width: 2.8; filter: url(#glow-warm); }
+path.e.hl-up { stroke: var(--azure); stroke-width: 2.8; opacity: 1; filter: url(#glow); }
+path.e.hl-down { stroke: #D3DEEE; stroke-width: 2.6; opacity: 1; filter: url(#glow); }
+.dim path.e:not(.hl-up):not(.hl-down):not(.keep) { opacity: .07; }
+path.e.drawing { stroke-dasharray: var(--len) var(--len); stroke-dashoffset: var(--len); animation: draw 1.3s var(--ease) forwards; animation-delay: var(--d, 0ms); }
+path.e.arriving { opacity: 0; animation: fade .6s var(--ease) .5s forwards; }
+.comet { fill: var(--azure-hi); }
+.comet.down { fill: #E4ECF7; }
+
+/* ==================================================================== instruments: zoom, minimap */
+.glass { position: absolute; z-index: 4; border-radius: 14px; background: rgba(23, 28, 36, .62); backdrop-filter: blur(14px) saturate(1.4);
+  border: 1px solid rgba(185, 219, 246, .16); box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
+.zoom { left: 18px; bottom: 18px; display: flex; flex-direction: column; gap: 2px; padding: 5px; animation: rise-sm .8s var(--ease) 1s both; }
+.zoom button { width: 34px; height: 34px; border: 0; border-radius: 9px; background: transparent; cursor: pointer; font-size: 17px; color: #DCE6F2;
+  transition: background .25s, color .25s, transform .3s var(--spring); }
+.zoom button:hover { background: rgba(142, 194, 236, .18); color: #fff; transform: scale(1.1); }
+.minimap { right: 18px; bottom: 18px; width: 210px; height: 140px; padding: 0; overflow: hidden; cursor: pointer; animation: rise-sm .8s var(--ease) 1.15s both; }
+.minimap canvas { width: 100%; height: 100%; display: block; }
+
+/* ==================================================================== panel (ivory paper) */
+aside { width: 390px; background: var(--chrome); overflow-y: auto; position: relative; z-index: 5; border-left: 1px solid var(--line);
+  box-shadow: -10px 0 40px rgba(8, 12, 18, .22); animation: slide-left .9s var(--ease) both; }
+.inner { padding: 24px 26px 32px; }
+.inner > * { animation: panel-in .55s var(--ease) both; }
+.inner > *:nth-child(1) { animation-delay: 0ms; }   .inner > *:nth-child(2) { animation-delay: 40ms; }
+.inner > *:nth-child(3) { animation-delay: 80ms; }  .inner > *:nth-child(4) { animation-delay: 120ms; }
+.inner > *:nth-child(5) { animation-delay: 160ms; } .inner > *:nth-child(6) { animation-delay: 200ms; }
+.inner > *:nth-child(7) { animation-delay: 240ms; } .inner > *:nth-child(n+8) { animation-delay: 280ms; }
+.status { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--azure-deep); }
+.status i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 18%, transparent); }
+.status.stale { color: var(--brick); } .status.indirect { color: var(--ochre); } .status.replaced, .status.rejected { color: var(--muted); }
+.status .id { color: var(--muted); font-weight: 500; }
+aside h2 { font: 500 24px/1.28 var(--serif); margin: 10px 0 14px; letter-spacing: -.008em; }
+aside h3 { font: 600 13px var(--sans); color: var(--muted); margin: 24px 0 8px; display: flex; align-items: center; gap: 10px; }
+aside h3::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+aside ul, aside ol { margin: 0; padding-left: 18px; }
+aside li { margin: 6px 0; }
+aside li::marker { color: var(--azure-deep); }
+.meta-line { color: var(--muted); font-size: 12.5px; }
+.callout { border-radius: 12px; padding: 10px 13px; margin: 8px 0; font-size: 13.5px; }
+.callout.warn { background: var(--brick-wash); color: color-mix(in srgb, var(--brick) 82%, var(--ink)); border-left: 3px solid var(--brick); }
+.callout.note { background: var(--azure-wash); border-left: 3px solid var(--azure-deep); }
+.later { color: var(--muted); font-size: 12.5px; }
+a.ref { color: var(--azure-deep); cursor: pointer; text-decoration: none; font-weight: 650; font-variant-numeric: tabular-nums;
+  background-image: linear-gradient(var(--azure), var(--azure)); background-size: 0 1.5px; background-position: 0 100%; background-repeat: no-repeat;
+  transition: background-size .35s var(--ease); }
+a.ref:hover { background-size: 100% 1.5px; }
+.actions { display: flex; gap: 7px; flex-wrap: wrap; margin: 4px 0 6px; }
+.btn { border: 1px solid var(--line); background: var(--chrome-2); border-radius: 10px; padding: 7px 14px; cursor: pointer; font-size: 13px;
+  transition: transform .3s var(--spring), background .25s, border-color .25s, box-shadow .25s; }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(58, 69, 86, .14); border-color: var(--cobalt-mist); }
+.btn:active { transform: translateY(0) scale(.97); }
+.btn.good { border-color: var(--azure); color: var(--azure-deep); }
+.btn.good:hover { background: var(--azure-wash); }
+.btn.bad { color: var(--brick); border-color: color-mix(in srgb, var(--brick) 45%, var(--line)); }
+.btn.bad:hover { background: var(--brick-wash); }
+.btn.primary { background: linear-gradient(180deg, #45526A, var(--cobalt)); color: var(--ivory); border-color: var(--cobalt); }
+.btn:disabled { opacity: .5; pointer-events: none; }
+textarea, input.note { width: 100%; border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; background: var(--chrome-2);
+  transition: border-color .2s, box-shadow .3s; }
+textarea:focus, input.note:focus { outline: none; border-color: var(--azure); box-shadow: 0 0 0 4px color-mix(in srgb, var(--azure) 35%, transparent); }
+textarea { min-height: 88px; resize: vertical; font: 18px/1.4 var(--serif); }
+.confirmbox { border-radius: 13px; padding: 13px; margin-top: 8px; background: var(--brick-wash); animation: pop .5s var(--spring) both; }
+.confirmbox p { margin: 0 0 9px; font-size: 13.5px; }
+.hint { color: var(--muted); font-size: 12.5px; margin-top: 10px; line-height: 1.6; }
+.hint code { font-size: 12px; background: var(--azure-wash); padding: 1px 6px; border-radius: 5px; color: var(--ink); }
+.legend { display: grid; grid-template-columns: 54px 1fr; gap: 9px 12px; align-items: center; font-size: 13px; }
+.legend .lgh { grid-column: 1 / -1; font: 600 12px var(--sans); color: var(--muted); margin: 10px 0 -2px; }
+.legend .lgh:first-child { margin-top: 0; }
+.sw { width: 54px; height: 24px; border-radius: 7px; background: radial-gradient(120% 140% at 30% 0%, var(--night-1), var(--night-3)); position: relative; overflow: hidden; }
+.sw .mini { position: absolute; left: 13px; top: 5px; width: 28px; height: 14px; border-radius: 3px; background: var(--paper); }
+.sw .mini::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; background: var(--c); }
+.sw.ghost .mini { background: linear-gradient(165deg, #E4DFD3, #D7D1C3); outline: 1px dashed rgba(58, 69, 86, .5); outline-offset: -1px; }
+.sw.ghost .mini::before { background: repeating-linear-gradient(180deg, #8A93A2 0 3px, transparent 3px 5px); }
+.sw svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.empty { color: var(--muted); font-style: italic; }
+.intro { font: italic 16px/1.55 var(--serif); color: var(--muted); margin: 0 0 20px; }
+
+#toast { position: fixed; left: 50%; bottom: 28px; z-index: 9; display: flex; align-items: center; gap: 12px; max-width: 80vw; overflow: hidden;
+  padding: 11px 12px 13px 16px; border-radius: 13px; background: rgba(23, 28, 36, .92); color: var(--ivory); backdrop-filter: blur(12px);
+  border: 1px solid rgba(185, 219, 246, .18); box-shadow: 0 18px 40px rgba(0, 0, 0, .4); font-size: 13.5px;
+  transform: translate(-50%, 160%) scale(.96); opacity: 0; transition: transform .6s var(--spring), opacity .35s; }
+#toast.show { transform: translate(-50%, 0) scale(1); opacity: 1; }
+#toast.err { background: rgba(130, 58, 50, .95); }
+#toast .bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: linear-gradient(90deg, var(--azure-deep), var(--azure-hi));
+  transform-origin: left; animation: drain var(--t, 5s) linear forwards; }
+#toast button { border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.06); color: inherit; border-radius: 9px; padding: 4px 11px; cursor: pointer;
+  transition: background .2s; }
+#toast button:hover { background: rgba(255,255,255,.16); }
+
+/* ==================================================================== motion */
+@keyframes emerge { from { opacity: 0; transform: translateZ(-160px) translateY(26px) scale(.86) rotateX(14deg); filter: blur(8px); }
+                    to { opacity: 1; filter: blur(0); } }
+@keyframes rise-sm { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes drop { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+@keyframes slide-left { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: none; } }
+@keyframes panel-in { from { opacity: 0; transform: translateY(12px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes pop { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: none; } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes beat { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.7); opacity: .5; } }
+@keyframes ember { 0%, 100% { box-shadow: var(--card-shadow), 0 0 0 1px rgba(194,106,94,.35), 0 0 22px rgba(227,148,134,.18); }
+                   50% { box-shadow: var(--card-shadow), 0 0 0 1px rgba(194,106,94,.55), 0 0 38px rgba(227,148,134,.42); } }
+@keyframes spin { to { --spin: 360deg; } }
+@keyframes breathe { 0%, 100% { opacity: .55; transform: translateY(-4px) scale(1); } 50% { opacity: 1; transform: translateY(-4px) scale(1.04); } }
+@keyframes shimmer { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes glint { 0%, 100% { box-shadow: none; } 50% { box-shadow: 0 0 0 4px rgba(142,194,236,.35); } }
+@keyframes breathe-orb { 0%, 100% { transform: scale(1); box-shadow: 0 0 50px rgba(142,194,236,.45); } 50% { transform: scale(1.06); box-shadow: 0 0 80px rgba(142,194,236,.7); } }
+@keyframes drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes fold { 0% { opacity: 1; } 35% { transform: scale(1.05) rotate(-1deg); } 100% { opacity: 0; transform: scale(.4) translateY(40px) rotate(6deg); filter: blur(8px); } }
+@keyframes drift-a { to { transform: translate(18%, 12%) scale(1.15); } }
+@keyframes drift-b { to { transform: translate(-16%, -10%) scale(.9); } }
+@keyframes drift-c { to { transform: translate(-12%, -18%) scale(1.2); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+@media (max-width: 860px) {
+  header { gap: 10px 14px; padding: 10px 14px; }
+  .title h1 { font-size: 17px; } .title .sub, .snapnote { display: none; }
+  .stats { order: 3; width: 100%; }
+  .search input { width: 150px; } .search input:focus { width: 180px; }
+  .switch { font-size: 0; gap: 0; }
+  main { flex-direction: column; height: calc(100% - 98px); }
+  aside { width: auto; height: 40%; border-left: 0; border-top: 1px solid var(--line); }
+  .card { width: 224px; } .minimap { display: none; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="title">
+    <h1>Decisions in <span id="pname"></span></h1>
+    <div class="sub" id="gen"></div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="spacer"></div>
+  <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input type="search" id="q" placeholder="Search decisions and reasons" aria-label="Search decisions and reasons" autocomplete="off" spellcheck="false"></label>
+  <select class="tool" id="area" aria-label="Show one area" hidden></select>
+  <div class="seg" role="group" aria-label="Layout"><button data-l="flow" aria-pressed="true" title="Everything left to right, in the order decisions rest on each other">Flow</button><button data-l="families" aria-pressed="false" title="Each foundation decision with the decisions that rest on it">Families</button></div>
+  <button class="tool" id="listBtn" aria-pressed="false" title="Show the decisions as a table">List</button>
+  <label class="switch"><input type="checkbox" id="showReplaced"><span class="track"></span>Show replaced</label>
+</header>
+<main>
+  <div id="stage">
+    <div class="aurora"><i></i><i></i><i></i></div>
+    <div class="grid far" id="gridFar"></div>
+    <div class="grid" id="grid"></div>
+    <div class="spot" id="spot"></div>
+    <div id="world"><svg id="edges"></svg></div>
+    <div id="empty" hidden></div>
+    <div class="zoom glass"><button id="zin" title="Zoom in" aria-label="Zoom in">+</button><button id="zout" title="Zoom out" aria-label="Zoom out">−</button><button id="fit" title="Fit to screen (F)" aria-label="Fit to screen">⤢</button><button id="exp" title="Download as an image" aria-label="Download as an image" aria-haspopup="true">⤓</button></div>
+    <div class="glass" id="expmenu" hidden><button data-k="svg">Download SVG (sharp, for docs)</button><button data-k="png">Download PNG (for slides)</button></div>
+    <div class="glass" id="timeline" hidden><button id="tlp" aria-label="Play the project's history">▶</button>
+      <input type="range" id="tlr" aria-label="Show the decisions as they were on a date"><span id="tll" aria-live="polite"></span></div>
+    <div id="list" role="region" aria-label="Decisions as a table"></div>
+    <div class="minimap glass" title="Click or drag to move around"><canvas id="mini"></canvas></div>
+  </div>
+  <aside id="panel" aria-live="polite"></aside>
+</main>
+<div id="toast" role="status"></div>
+<div id="palette" hidden role="dialog" aria-modal="true" aria-label="Go to a decision"><div class="box">
+  <input id="palq" placeholder="Go to a decision: type words or an id" aria-label="Go to a decision" aria-controls="palres" autocomplete="off">
+  <ul id="palres" role="listbox"></ul><div class="foot"><kbd>↑</kbd> <kbd>↓</kbd> to choose, <kbd>Enter</kbd> to go, <kbd>Esc</kbd> to close</div></div></div>
+<script>
+let DATA = /*__DATA__*/null;
+const EDIT = /*__EDIT__*/null;   // set when served by `dg view`: corrections allowed
+let byId = Object.fromEntries(DATA.nodes.map(n => [n.id, n]));
+const LABEL = { ok: "In force", stale: "Stale", indirect: "Indirectly affected", resolved: "Resolved", replaced: "Replaced", rejected: "Rejected by you" };
+const STATUS_COLOR = { ok: "#8EC2EC", stale: "#E39486", indirect: "#E2BC72", resolved: "#4A86C0", replaced: "#B4BCC8", rejected: "#C98B80" };
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const SMALL_MQ = matchMedia("(max-width: 860px)");
+let SMALL = SMALL_MQ.matches;   // re-checked on resize: the page may first load in a narrow pane
+const NS = "http://www.w3.org/2000/svg";
+const $ = s => document.querySelector(s);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const num = id => parseInt(String(id).replace(/\D/g, ""), 10) || 0;
+
+let showReplaced = false, statusFilter = null, selected = null, firstRender = true;
+let topicFilter = null, listMode = false, FULL = DATA, asOfIdx = null;
+let layoutMode = "flow", shapeOf = {}, familyOf = null, memberOf = {}, fanOf = {};
+const collapsed = new Set();
+try { layoutMode = localStorage.getItem("dg-layout") === "families" ? "families" : "flow";
+      JSON.parse(localStorage.getItem("dg-collapsed-" + DATA.project) || "[]").forEach(x => collapsed.add(x)); } catch (e) {}
+let view = { x: 40, y: 30, k: 1 };
+const pos = {}, cards = {};
+let EDGES = [];
+let COLW = SMALL ? 224 : 264, GAPX = SMALL ? 70 : 120;
+const GAPY = 20, GRID_GAP = 22;
+let laidOutFor = null;   // the stage size the current layout was chosen for
+
+$("#pname").textContent = DATA.project;
+
+// ==================================================================== header
+function countUp(b, to) {
+  if (REDUCED || !firstRender) { b.textContent = to; return; }
+  const t0 = performance.now(), dur = 900;
+  const step = now => { const t = Math.min(1, (now - t0) / dur); b.textContent = Math.round(to * (1 - Math.pow(1 - t, 3))); if (t < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function renderStats() {
+  const counts = {};
+  DATA.nodes.forEach(n => counts[n.status] = (counts[n.status] || 0) + 1);
+  const active = DATA.nodes.length - (counts.replaced || 0) - (counts.rejected || 0);
+  const box = $("#stats"); box.innerHTML = "";
+  let i = 0;
+  const mk = (s, label, n) => {
+    if (!n) return;
+    const c = el("button", "chip" + (statusFilter === s ? " on" : ""));
+    c.dataset.s = s; c.append(el("i"));
+    c.style.animationDelay = (firstRender ? 250 + i++ * 70 : 0) + "ms";
+    const b = el("b", null, "0"); c.append(b, document.createTextNode(label)); countUp(b, n);
+    c.onclick = () => { statusFilter = statusFilter === s ? null : s; applyHighlight(); renderStats(); };
+    box.append(c);
+  };
+  mk("active", "in force", active);
+  mk("stale", "stale", counts.stale);
+  mk("indirect", "indirectly affected", counts.indirect);
+  mk("resolved", "resolved", counts.resolved);
+  mk("new", "new or changed since your last visit", DATA.nodes.filter(n => n.new || n.changed).length);
+  const mine = DATA.nodes.filter(n => n.confirmed || n.edited).length;
+  const live = EDIT && EDIT.live;
+  const sub = [live ? `Live, updated ${DATA.generated}` : `Snapshot from ${DATA.generated}`];
+  if (mine) sub.push(`${mine} checked by you`);
+  if (counts.rejected) sub.push(`${counts.rejected} rejected by you`);
+  $("#gen").textContent = sub.join(", ");
+  $("#gen").title = DATA.project_path;
+  if (!live && !$("#snapnote")) {        // a snapshot never changes: say so, and how to get the live page
+    const n = el("span", "snapnote"); n.id = "snapnote";
+    n.innerHTML = " &nbsp;Not live: run <code>dg view</code> for updates.";
+    n.title = "This page won't change when new decisions are recorded. Running dg view in a terminal opens the live version.";
+    $("#gen").after(n);
+  }
+}
+
+// ==================================================================== edges actually shown
+// With replaced decisions hidden, a "rests on" link to a replaced decision is drawn from the
+// decision now in force: brick if the reason was replaced, azure if it was brought back.
+function currentOf(id) { const seen = new Set(); while (byId[id].superseded_by && !seen.has(id)) { seen.add(id); id = byId[id].superseded_by; } return id; }
+function visibleEdges(ids) {
+  const out = [];
+  DATA.edges.forEach(e => {
+    if (ids.has(e.from) && ids.has(e.to)) { out.push(e); return; }
+    if (e.kind === "depends" && ids.has(e.to) && !ids.has(e.from) && byId[e.from]) {
+      const cur = currentOf(e.from);
+      if (ids.has(cur) && cur !== e.to) {
+        const restored = (byId[cur].restores || []).includes(e.from);
+        out.push({ from: cur, to: e.to, kind: restored ? "via-restored" : "via-replaced", orig: e.from });
+      }
+    }
+  });
+  return out;
+}
+
+// ==================================================================== layout
+function visibleNodes() {
+  return DATA.nodes.filter(n => (showReplaced || (n.status !== "replaced" && n.status !== "rejected")) && (!topicFilter || n.topic === topicFilter));
+}
+function layout() {
+  const nodes = visibleNodes(), ids = new Set(nodes.map(n => n.id));
+  EDGES = visibleEdges(ids);
+  const linked = new Set();
+  EDGES.forEach(e => { linked.add(e.from); linked.add(e.to); });
+  const preds = {}; nodes.forEach(n => preds[n.id] = []);
+  EDGES.forEach(e => { if (e.kind !== "restores") preds[e.to].push(e.from); });
+  const layer = {}, visiting = new Set();
+  const depth = id => {
+    if (layer[id] != null) return layer[id];
+    if (visiting.has(id)) return 0;
+    visiting.add(id);
+    const d = preds[id].length ? 1 + Math.max(...preds[id].map(depth)) : 0;
+    visiting.delete(id);
+    return layer[id] = d;
+  };
+  const cols = [];
+  nodes.filter(n => linked.has(n.id)).forEach(n => (cols[depth(n.id)] ||= []).push(n.id));
+  for (let i = 0; i < cols.length; i++) cols[i] ||= [];
+  cols.forEach(c => c.sort((a, b) => num(a) - num(b)));
+  const idx = {};
+  const reindex = () => cols.forEach(c => c.forEach((id, i) => idx[id] = i));
+  const bary = id => { const p = preds[id].filter(x => idx[x] != null); return p.length ? p.reduce((s, x) => s + idx[x], 0) / p.length : idx[id]; };
+  reindex();
+  for (let sweep = 0; sweep < 4; sweep++) for (let L = 1; L < cols.length; L++) { cols[L].sort((a, b) => bary(a) - bary(b) || num(a) - num(b)); reindex(); }
+  const standalone = nodes.filter(n => !linked.has(n.id)).map(n => n.id).sort((a, b) => num(a) - num(b));
+  return { cols, standalone, preds };
+}
+
+function makeCard(id, delay) {
+  const n = byId[id], c = el("div", "card"), f = el("div", "face");
+  c.dataset.s = n.status; c.dataset.id = id;
+  const shape = shapeOf[id] || "card";
+  c.dataset.shape = shape;
+  if (delay != null) f.style.setProperty("--d", delay + "ms"); else f.style.animation = "none";
+  const meta = el("div", "meta"); meta.append(el("span", "cid", id));
+  if (n.confirmed || n.edited) { const m = el("span", "mine", n.confirmed ? "✓" : "✎"); m.title = n.confirmed ? "Confirmed by you" : "Reworded by you"; meta.append(m); }
+  if (n.new) { meta.append(el("span", "newmark", "New")); c.classList.add("is-new"); }
+  else if (n.changed) { meta.append(el("span", "newmark changed", "Changed")); c.classList.add("is-new"); }
+  if (n.topic) { const t = el("span", "tag", n.topic); t.title = "Area: " + n.topic; meta.append(t); }
+  if (n.status !== "ok") {
+    const p = el("span", "pill");
+    const label = n.status === "replaced" && n.superseded_by ? `Replaced by ${n.superseded_by}` : LABEL[n.status];
+    p.append(el("i"), document.createTextNode(label)); meta.append(p);
+  }
+  if (shape === "hex" && fanOf[id]) { const fan = el("span", "fan", `${fanOf[id]} rest${fanOf[id] === 1 ? "s" : ""} on it`); meta.insertBefore(fan, meta.querySelector(".pill")); }
+  f.append(meta, el("p", "txt", n.decision), el("div", "sheen"));
+  if (shape === "card") c.append(el("i", "port in"));
+  if ((shape === "card" || shape === "hex") && fanOf[id]) c.append(el("i", "port out"));
+  f.title = n.decision;
+  c.append(f);
+  c.onclick = ev => { ev.stopPropagation(); select(id); };
+  c.onmouseenter = () => hoverEdges(id, true);
+  c.onmouseleave = () => { hoverEdges(id, false); f.style.setProperty("--rx", "0deg"); f.style.setProperty("--ry", "0deg"); };
+  if (!REDUCED) c.onmousemove = ev => {     // tilt toward the cursor, and move the sheen with it
+    const r = f.getBoundingClientRect(), px = (ev.clientX - r.left) / r.width, py = (ev.clientY - r.top) / r.height;
+    f.style.setProperty("--ry", ((px - .5) * 9).toFixed(2) + "deg");
+    f.style.setProperty("--rx", ((.5 - py) * 9).toFixed(2) + "deg");
+    f.style.setProperty("--mx", (px * 100).toFixed(1) + "%"); f.style.setProperty("--my", (py * 100).toFixed(1) + "%");
+  };
+  $("#world").append(c); cards[id] = c;
+  return c;
+}
+function place(id, x, y) {
+  const c = cards[id], h = c.offsetHeight;
+  pos[id] = { x, y, w: COLW, h };
+  c.style.left = x + "px"; c.style.top = y + "px"; c.style.height = h + "px";
+  c.dataset.lines = h >= 96 ? "2" : "1";
+}
+
+function render() {
+  const world = $("#world");
+  const before = {}; for (const id in pos) before[id] = { ...pos[id] };
+  world.querySelectorAll(".card, .section, .family").forEach(c => c.remove());
+  world.classList.remove("far");   // measure cards at their normal size
+  for (const k in cards) delete cards[k];
+  for (const k in pos) delete pos[k];
+  const { cols, standalone, preds } = layout();
+  { const r = $("#stage").getBoundingClientRect(); laidOutFor = { w: r.width, h: r.height }; }
+  const animate = !REDUCED;
+  const delayFor = (id, base) => animate && (firstRender || !before[id]) ? (firstRender ? base : 220) : null;
+
+  let bottom = 0, linkedRight = 0;
+  // shapes: foundations (others rest on them) are hexagons, sub-decisions are cards with ports,
+  // standalone decisions are capsules, replaced and rejected ones are tickets
+  const linkedSet = new Set(cols.flat());
+  fanOf = {}; shapeOf = {};
+  EDGES.forEach(e => { if (e.kind !== "restores" && e.kind !== "supersedes") fanOf[e.from] = (fanOf[e.from] || 0) + 1; });
+  visibleNodes().forEach(n => {
+    shapeOf[n.id] = n.status === "replaced" || n.status === "rejected" ? "ticket"
+      : !linkedSet.has(n.id) ? "capsule" : preds[n.id].length ? "card" : "hex";
+  });
+  familyOf = null;
+  if (layoutMode === "families" && linkedSet.size) {
+    const r = familiesLayout(cols, preds, standalone, delayFor);
+    bottom = r.bottom; linkedRight = r.right;
+  } else {
+  cols.forEach((col, L) => col.forEach((id, i) => makeCard(id, delayFor(id, 200 + Math.min(L, 8) * 170 + Math.min(i, 12) * 60))));
+  // A layer taller than the screen wraps into side-by-side sub-columns. Try each wrap height and keep the
+  // one that lets the whole graph (linked part plus the standalone grid below it) show biggest.
+  const SUBGAP = 26;
+  const stR = $("#stage").getBoundingClientRect();
+  const fitW = Math.max(300, stR.width - 128 - (SMALL ? 0 : 160)), fitH = Math.max(300, stR.height - 128);
+  const linkedIds = cols.flat();
+  const avgH = linkedIds.length ? linkedIds.reduce((t, id) => t + cards[id].offsetHeight, 0) / linkedIds.length : 80;
+  const tallest = Math.max(0, ...cols.map(c => c.length));
+  let maxRows = tallest;
+  if (tallest > 4 && !SMALL) {
+    const nSt = standalone.length, avgSt = avgH;
+    let best = -1;
+    for (let R = 4; R <= tallest; R++) {
+      const w = cols.reduce((t, c) => t + Math.ceil(c.length / R) * (COLW + SUBGAP) - SUBGAP, 0) + (cols.length - 1) * GAPX;
+      const h = R * (avgH + GAPY);
+      const per = Math.max(3, Math.floor((w + GRID_GAP) / (COLW + GRID_GAP)));
+      const hs = nSt ? 76 + Math.ceil(nSt / per) * (avgSt + GRID_GAP) : 0;
+      const k = Math.min(fitW / Math.max(w, COLW), fitH / (h + hs + 90));
+      if (k > best + 1e-3) { best = k; maxRows = R; }
+    }
+  }
+  let x = 0;
+  cols.forEach((col, L) => {
+    const want = col.map(id => {
+      const p = preds[id].filter(q => pos[q]);
+      const h = cards[id].offsetHeight;
+      return { id, h, y: p.length ? p.reduce((s, q) => s + pos[q].y + pos[q].h / 2, 0) / p.length - h / 2 : -Infinity };
+    });
+    if (L > 0) want.sort((a, b) => a.y - b.y || num(a.id) - num(b.id));
+    if (want.length <= maxRows) {          // fits: line each card up with what it rests on
+      let y = 0;
+      want.forEach(w => { y = Math.max(y, isFinite(w.y) ? w.y : y); place(w.id, x, y); y += w.h + GAPY; });
+      bottom = Math.max(bottom, y);
+      x += COLW;
+    } else {                               // too tall: wrap, keeping the same top-to-bottom order
+      for (let i = 0; i < want.length; i += maxRows) {
+        let y = 0;
+        want.slice(i, i + maxRows).forEach(w => { place(w.id, x, y); y += w.h + GAPY; });
+        bottom = Math.max(bottom, y);
+        x += COLW + (i + maxRows < want.length ? SUBGAP : 0);
+      }
+    }
+    linkedRight = x;
+    x += GAPX;
+  });
+  }
+  if (standalone.length) {
+    let rowY = cols.length ? bottom + 76 : 0;
+    const linkedW = cols.length ? linkedRight : 0;
+    standalone.forEach((id, i) => makeCard(id, delayFor(id, 260 + Math.min(cols.length, 8) * 170 + 140 + Math.min(i, 24) * 40)));
+    const cellW = COLW + GRID_GAP;
+    // with many decisions, group them by the conversation they came from
+    const groups = [];
+    const byTopic = !topicFilter && standalone.filter(id => byId[id].topic).length >= standalone.length * 0.6;
+    if (standalone.length >= 12 && !topicFilter) {
+      const keyOf = id => byTopic ? (byId[id].topic || "other") : (byId[id].session || "?");
+      const bucket = new Map();
+      standalone.forEach(id => { const k = keyOf(id); if (!bucket.has(k)) bucket.set(k, []); bucket.get(k).push(id); });
+      bucket.forEach(ids => groups.push(ids));
+      if (byTopic) groups.sort((a, b) => b.length - a.length);
+    }
+    const grouped = groups.length > 1 && groups.length <= standalone.length / 3;
+    const parts = grouped ? groups : [standalone];
+    const LABEL_H = 46, GROUP_GAP = 18;
+    const heightFor = perRow => parts.reduce((h, ids, g) => {
+      if (grouped) h += LABEL_H;
+      for (let i = 0; i < ids.length; i += perRow) h += Math.max(...ids.slice(i, i + perRow).map(id => cards[id].offsetHeight)) + GRID_GAP;
+      return h + (grouped ? GROUP_GAP : 0);
+    }, 0);
+    // try every row width and keep the one that lets the whole graph show biggest on this screen
+    const st = $("#stage").getBoundingClientRect();
+    const availW = Math.max(300, st.width - 128 - (SMALL ? 0 : 160)), availH = Math.max(300, st.height - 128);
+    let perRow = 2, best = -1;
+    for (let r = SMALL ? 2 : 3; r <= (SMALL ? 2 : 14); r++) {
+      const w = Math.max(linkedW, Math.min(r, standalone.length) * cellW), h = rowY + heightFor(r) + 90;
+      const k = Math.min(availW / w, availH / h);
+      if (k > best + 1e-3) { best = k; perRow = r; }
+    }
+    const label = (text, bottom) => { const l = el("div", "section", text); l.style.top = bottom + "px"; l.style.left = "2px"; world.append(l); };
+    if (cols.length) { rowY += 8; label(layoutMode === "families" ? "On their own: nothing rests on these, and they rest on nothing" : "Standalone: nothing rests on these, and they rest on nothing", rowY - 14); rowY += grouped ? 10 : 0; }
+    const fmt = iso => { const d = new Date(iso); return isNaN(d) ? null : d.toLocaleDateString(undefined, { day: "numeric", month: "short" }) + ", " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }); };
+    parts.forEach(ids => {
+      if (grouped) {
+        const when = fmt(byId[ids[0]].decided_at), area = byId[ids[0]].topic || "other";
+        rowY += LABEL_H;
+        const head = byTopic ? area.charAt(0).toUpperCase() + area.slice(1) : (when ? "Conversation of " + when : "Conversation");
+        label(`${head}: ${ids.length} decision${ids.length === 1 ? "" : "s"}`, rowY - 12);
+      }
+      for (let i = 0; i < ids.length; i += perRow) {
+        let rowH = 0;
+        ids.slice(i, i + perRow).forEach((id, j) => { place(id, j * cellW, rowY); rowH = Math.max(rowH, pos[id].h); });
+        rowY += rowH + GRID_GAP;
+      }
+      if (grouped) rowY += GROUP_GAP;
+    });
+  }
+  // glide cards that already existed from where they were to where they are now (FLIP)
+  let moved = false;
+  if (!firstRender && animate) {
+    for (const id in cards) {
+      const b = before[id], a = pos[id];
+      if (!b) continue;
+      const dx = b.x - a.x, dy = b.y - a.y;
+      if (Math.abs(dx) + Math.abs(dy) < 1) continue;
+      moved = true;
+      const c = cards[id];
+      c.style.transition = "none"; c.style.transform = `translate(${dx}px, ${dy}px)`;
+      c.getBoundingClientRect();
+      c.style.transition = ""; c.style.transform = "";
+    }
+  }
+  $("#world").classList.toggle("far", view.k < 0.6);
+  drawEdges(firstRender && animate ? "draw" : (moved ? "arrive" : ""));
+  applyHighlight();
+  firstRender = false;
+  drawMini();
+}
+
+function edgePath(e) {
+  const a = pos[e.from], b = pos[e.to];
+  if (e.kind === "restores") {
+    const x1 = a.x + a.w / 2, y1 = a.y, x2 = b.x + b.w / 2, y2 = b.y, lift = 70 + Math.abs(x1 - x2) * 0.08;
+    return `M${x1},${y1} C${x1},${Math.min(y1, y2) - lift} ${x2},${Math.min(y1, y2) - lift} ${x2},${y2}`;
+  }
+  const x1 = a.x + a.w, y1 = a.y + a.h / 2, x2 = b.x - 4, y2 = b.y + b.h / 2, dx = Math.max(50, (x2 - x1) / 2);
+  return `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
+}
+function drawEdges(mode) {
+  const svg = $("#edges"); svg.innerHTML = "";
+  const defs = document.createElementNS(NS, "defs");
+  defs.innerHTML = `
+    <filter id="glow" filterUnits="userSpaceOnUse" x="-20000" y="-20000" width="60000" height="60000"><feGaussianBlur stdDeviation="3.2" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="0 0 0 0 .56  0 0 0 0 .76  0 0 0 0 .93  0 0 0 .9 0" result="c"/>
+      <feMerge><feMergeNode in="c"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glow-warm" filterUnits="userSpaceOnUse" x="-20000" y="-20000" width="60000" height="60000"><feGaussianBlur stdDeviation="3" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="0 0 0 0 .89  0 0 0 0 .58  0 0 0 0 .52  0 0 0 .8 0" result="c"/>
+      <feMerge><feMergeNode in="c"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="comet" filterUnits="userSpaceOnUse" x="-20000" y="-20000" width="60000" height="60000"><feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  [["e", "rgba(251,248,239,.6)"], ["up", "#8EC2EC"], ["down", "#D3DEEE"], ["red", "#E39486"], ["blue", "#8EC2EC"]].forEach(([k, col]) => {
+    const m = document.createElementNS(NS, "marker");
+    m.setAttribute("id", "arr-" + k); m.setAttribute("viewBox", "0 0 10 10"); m.setAttribute("refX", "8"); m.setAttribute("refY", "5");
+    m.setAttribute("markerWidth", "6.5"); m.setAttribute("markerHeight", "6.5"); m.setAttribute("orient", "auto-start-reverse");
+    const p = document.createElementNS(NS, "path"); p.setAttribute("d", "M1,1 L9,5 L1,9 Q3,5 1,1 z"); p.setAttribute("fill", col);
+    m.append(p); defs.append(m);
+  });
+  svg.append(defs);
+  EDGES.forEach((e, i) => {
+    if (!pos[e.from] || !pos[e.to]) return;
+    const p = document.createElementNS(NS, "path");
+    p.setAttribute("d", edgePath(e));
+    p.id = `edge-${i}`;
+    const dead = e.kind === "depends" && byId[e.from].status === "replaced" && byId[e.to].status === "stale";
+    const cross = familyOf && familyOf[e.from] && familyOf[e.to] && familyOf[e.from] !== familyOf[e.to];
+    p.setAttribute("class", `e ${e.kind}${dead ? " dead" : ""}${cross ? " cross" : ""}`);
+    p.dataset.from = e.from; p.dataset.to = e.to; p.dataset.kind = e.kind;
+    const mk = e.kind === "via-replaced" || dead ? "red" : e.kind === "via-restored" || e.kind === "restores" ? "blue" : "e";
+    p.dataset.marker = mk;
+    p.setAttribute("marker-end", `url(#arr-${mk})`);
+    const t = document.createElementNS(NS, "title");
+    t.textContent = e.kind === "via-replaced" ? `${e.to} rested on ${e.orig}, which ${e.from} replaced`
+      : e.kind === "via-restored" ? `${e.to} rests on ${e.orig}, which ${e.from} brought back`
+      : e.kind === "supersedes" ? `${e.from} was replaced by ${e.to}`
+      : e.kind === "restores" ? `${e.from} brings back ${e.to}` : `${e.to} rests on ${e.from}`;
+    p.append(t);
+    svg.append(p);
+    if (mode === "draw") {
+      const len = p.getTotalLength();
+      p.style.setProperty("--len", len); p.style.setProperty("--d", (650 + (num(e.from) * 37 + num(e.to) * 13) % 500) + "ms");
+      p.classList.add("drawing");
+      p.removeAttribute("marker-end");
+      p.addEventListener("animationend", () => { p.classList.remove("drawing"); if (!p.classList.contains("hl-up") && !p.classList.contains("hl-down")) p.setAttribute("marker-end", `url(#arr-${mk})`); }, { once: true });
+    } else if (mode === "arrive") {
+      p.classList.add("arriving");
+      p.addEventListener("animationend", () => p.classList.remove("arriving"), { once: true });
+    }
+  });
+}
+function hoverEdges(id, on) {
+  document.querySelectorAll("#edges path.e").forEach(p => { if (p.dataset.from === id || p.dataset.to === id) p.classList.toggle("hov", on); });
+}
+
+// ==================================================================== selection
+function closure(start, next) {
+  const out = new Set(), stack = [...next(start)];
+  while (stack.length) { const x = stack.pop(); if (out.has(x) || x === start) continue; out.add(x); stack.push(...next(x)); }
+  return out;
+}
+function select(id) {
+  if (id !== selected) { editing = null; confirmingReject = null; }
+  if (id && !cards[id] && layoutMode === "families" && memberOf[id] && collapsed.has(memberOf[id])) {
+    collapsed.delete(memberOf[id]); saveCollapsed(); render();
+  }
+  selected = id;
+  if (id && !cards[id] && byId[id] && (byId[id].status === "replaced" || byId[id].status === "rejected")) {
+    showReplaced = true; $("#showReplaced").checked = true; render();
+  }
+  applyHighlight(); renderPanel();
+  if (id && pos[id]) focusOn(id);
+}
+function matchNode(n, q) {
+  if (statusFilter === "active" && (n.status === "replaced" || n.status === "rejected")) return false;
+  if (statusFilter === "new" && !(n.new || n.changed)) return false;
+  if (statusFilter && !["active", "new"].includes(statusFilter) && n.status !== statusFilter) return false;
+  if (!q) return true;
+  return [n.id, n.decision, n.topic || "", ...n.reasons.map(r => r.text), ...n.rejected].join(" ").toLowerCase().includes(q);
+}
+function applyHighlight() {
+  const stage = $("#stage"), q = $("#q").value.trim().toLowerCase();
+  Object.values(cards).forEach(c => c.classList.remove("sel", "up", "down", "hit"));
+  document.querySelectorAll("#edges path.e").forEach(p => {
+    p.classList.remove("hl-up", "hl-down", "keep");
+    if (!p.classList.contains("drawing")) p.setAttribute("marker-end", `url(#arr-${p.dataset.marker || "e"})`);
+  });
+  stage.classList.remove("dim", "searching");
+  clearComets();
+  if (selected && cards[selected]) {
+    // follow real reasons only: a hidden replaced reason counts if it was brought back, not if it was replaced
+    const upOf = x => byId[x].depends_on.flatMap(d => {
+      if (cards[d]) return [d];
+      if (!byId[d]) return [];
+      const cur = currentOf(d);
+      return (byId[cur].restores || []).includes(d) ? [cur] : [];
+    });
+    const up = closure(selected, upOf);
+    const down = closure(selected, x => byId[x].dependents);
+    cards[selected].classList.add("sel");
+    up.forEach(x => cards[x] && cards[x].classList.add("up"));
+    down.forEach(x => cards[x] && cards[x].classList.add("down"));
+    document.querySelectorAll("#edges path.e.depends, #edges path.e.via-restored").forEach(p => {
+      const f = p.dataset.from, t = p.dataset.to;
+      if ((up.has(f) || f === selected) && (up.has(t) || t === selected) && t !== f && !down.has(t)) {
+        p.classList.add("hl-up"); p.setAttribute("marker-end", "url(#arr-up)"); comet(p, "up");
+      }
+      if (down.has(t) && (down.has(f) || f === selected)) { p.classList.add("hl-down"); p.setAttribute("marker-end", "url(#arr-down)"); comet(p, "down"); }
+    });
+    document.querySelectorAll("#edges path.e.via-replaced").forEach(p => { if (p.dataset.to === selected || up.has(p.dataset.to)) p.classList.add("keep"); });
+    stage.classList.add("dim");
+  }
+  const match = n => matchNode(n, q);
+  if (q || statusFilter) {
+    stage.classList.add("searching");
+    DATA.nodes.forEach(n => match(n) && cards[n.id] && cards[n.id].classList.add("hit"));
+  }
+  drawMini();
+  if (listMode) renderList();
+}
+// comets with fading tails: reasons flow into the selection, impact flows out of it
+function comet(path, dir) {
+  if (REDUCED) return;
+  const svg = $("#edges"), len = path.getTotalLength(), dur = Math.max(1.6, Math.min(3.4, len / 130));
+  const g = document.createElementNS(NS, "g"); g.setAttribute("class", "comets"); g.setAttribute("filter", "url(#comet)");
+  for (let i = 0; i < 2; i++) {
+    for (let k = 0; k < 6; k++) {                 // head + tail: smaller, fainter, slightly behind
+      const c = document.createElementNS(NS, "circle");
+      c.setAttribute("r", (3.6 - k * 0.5).toFixed(2)); c.setAttribute("class", "comet" + (dir === "down" ? " down" : ""));
+      c.setAttribute("opacity", (1 - k * 0.16).toFixed(2));
+      const begin = (i * dur / 2 + k * 0.045).toFixed(3) + "s";
+      const m = document.createElementNS(NS, "animateMotion");
+      m.setAttribute("dur", dur + "s"); m.setAttribute("repeatCount", "indefinite"); m.setAttribute("begin", begin);
+      m.setAttribute("keyPoints", "0;1"); m.setAttribute("keyTimes", "0;1"); m.setAttribute("calcMode", "spline"); m.setAttribute("keySplines", ".5 0 .5 1");
+      const mp = document.createElementNS(NS, "mpath"); mp.setAttribute("href", "#" + path.id);
+      m.append(mp); c.append(m);
+      const o = document.createElementNS(NS, "animate");
+      o.setAttribute("attributeName", "fill-opacity"); o.setAttribute("values", "0;1;1;0"); o.setAttribute("keyTimes", "0;.12;.82;1");
+      o.setAttribute("dur", dur + "s"); o.setAttribute("begin", begin); o.setAttribute("repeatCount", "indefinite");
+      c.append(o);
+      g.append(c);
+    }
+  }
+  svg.append(g);
+}
+function clearComets() { document.querySelectorAll("#edges g.comets").forEach(c => c.remove()); }
+
+// ==================================================================== panel
+function ref(id) { const a = el("a", "ref", id); a.onclick = () => select(id); a.tabIndex = 0; a.title = byId[id] ? byId[id].decision : ""; return a; }
+function refList(ids, showReplacement) {
+  const ul = el("ul");
+  ids.forEach(id => {
+    const li = el("li"); li.append(ref(id), document.createTextNode(" " + (byId[id] ? byId[id].decision : "")));
+    if (showReplacement && byId[id] && byId[id].superseded_by) {
+      const now = currentOf(id), restored = (byId[now].restores || []).includes(id);
+      const s = el("div", "later"); s.append(document.createTextNode(restored ? "Replaced, then brought back by " : "Replaced; in force now: "), ref(now));
+      li.append(s);
+    }
+    ul.append(li);
+  });
+  return ul;
+}
+// the four shapes, drawn small: a hexagon, a card with a port, a capsule, a notched ticket
+function legendShape(shape) {
+  const d = el("div", "sw"), s = document.createElementNS(NS, "svg"), A = "#8EC2EC", P = "#FBF8EF", BG = "#1E2531";
+  s.setAttribute("viewBox", "0 0 54 24"); s.setAttribute("aria-hidden", "true");
+  s.innerHTML = {
+    hex: `<polygon points="14,4.5 40,4.5 47,12 40,19.5 14,19.5 7,12" fill="${P}"/><rect x="14" y="4.5" width="26" height="2" fill="${A}"/>
+          <circle cx="47" cy="12" r="2.6" fill="${BG}" stroke="#B9DBF6" stroke-width="1.4"/>`,
+    card: `<rect x="11" y="4.5" width="32" height="15" rx="3.5" fill="${P}"/><rect x="11" y="6" width="2.4" height="12" rx="1" fill="${A}"/>
+           <circle cx="11" cy="12" r="2.6" fill="${BG}" stroke="#B9DBF6" stroke-width="1.4"/>`,
+    capsule: `<rect x="8" y="4.5" width="38" height="15" rx="7.5" fill="${P}"/><rect x="12.5" y="8.5" width="2.2" height="7" rx="1.1" fill="${A}"/>`,
+    ticket: `<rect x="10" y="4.5" width="34" height="15" rx="3" fill="#DCD6C8" stroke="#3A4556" stroke-opacity=".45" stroke-dasharray="2.5 2"/>
+             <circle cx="10" cy="12" r="3.2" fill="${BG}"/><circle cx="44" cy="12" r="3.2" fill="${BG}"/>`,
+  }[shape];
+  d.append(s); return d;
+}
+function legendSwatch(kind, c) {
+  const d = el("div", "sw" + (kind === "ghost" ? " ghost" : ""));
+  if (kind === "card" || kind === "ghost") { const m = el("div", "mini"); m.style.setProperty("--c", c); d.append(m); return d; }
+  const s = document.createElementNS(NS, "svg"); s.setAttribute("viewBox", "0 0 54 24");
+  s.innerHTML = `<path class="e ${kind}" d="M8,12 L46,12" style="opacity:${kind.includes("cross") ? .3 : 1}"></path>`;
+  d.append(s); return d;
+}
+function renderPanel() {
+  const panel = $("#panel"); panel.innerHTML = "";
+  const p = el("div", "inner"); panel.append(p);
+  if (!selected) {
+    p.append(el("p", "intro", "Every card is a decision made in this project. Lines show what each one rests on. Pick a card to see why it was made and what depends on it."));
+    const lg = el("div", "legend");
+    const add = (sw, label) => lg.append(sw, el("div", null, label));
+    const head = t => lg.append(el("div", "lgh", t));
+    head("Shape: what kind of decision");
+    add(legendShape("hex"), "Foundation: other decisions rest on it");
+    add(legendShape("card"), "Rests on another decision; the dot is where its link connects");
+    add(legendShape("capsule"), "Standalone: nothing rests on it, and it rests on nothing");
+    add(legendShape("ticket"), "Replaced or rejected, kept for the record (shown with “Show replaced”)");
+    head("Coloured edge: is it still sound?");
+    add(legendSwatch("card", "var(--azure)"), "In force");
+    add(legendSwatch("card", "var(--brick)"), "Stale: a reason it rests on was replaced");
+    add(legendSwatch("card", "var(--ochre)"), "Indirectly affected: something further up lost its reason");
+    add(legendSwatch("card", "var(--azure-deep)"), "Resolved: its reason was replaced, then brought back");
+    head("Lines");
+    add(legendSwatch("depends"), "Rests on, read left to right");
+    add(legendSwatch("via-replaced"), "Its reason was replaced by");
+    add(legendSwatch("via-restored"), "Its reason was brought back by");
+    if (layoutMode === "families") add(legendSwatch("depends cross"), "Rests on a decision in another family");
+    p.append(lg);
+    const h = el("div", "hint");
+    h.innerHTML = "Drag to move around, scroll to zoom, or use the map in the corner. <code>Ctrl K</code> jumps to a decision, arrow keys follow its links, <code>F</code> fits everything, <code>/</code> searches, <code>Esc</code> clears.";
+    p.append(h);
+    return;
+  }
+  const n = byId[selected];
+  const st = el("div", "status " + n.status);
+  st.append(el("i"), document.createTextNode(LABEL[n.status]), el("span", "id", n.id + (n.confirmed ? ", confirmed by you" : "")));
+  p.append(st);
+  if (editing === n.id) {
+    const ta = el("textarea"); ta.value = n.decision; ta.setAttribute("aria-label", "Decision wording"); p.append(ta);
+    const b = el("div", "actions");
+    const save = el("button", "btn primary", "Save wording"), cancel = el("button", "btn", "Cancel");
+    save.onclick = () => correct(n.id, "edit", { text: ta.value });
+    cancel.onclick = () => { editing = null; renderPanel(); };
+    ta.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) save.click(); if (e.key === "Escape") cancel.click(); });
+    b.append(save, cancel); p.append(b); setTimeout(() => { ta.focus(); ta.select(); }, 0);
+  } else {
+    p.append(el("h2", null, n.decision));
+  }
+  if (n.edited && n.original) p.append(el("div", "later", `Reworded by you. Originally: “${n.original}”`));
+  if (editing !== n.id && asOfIdx == null) p.append(actionBar(n));
+  if (asOfIdx != null) p.append(el("div", "callout note", `This is how the decision stood on ${fmtDay(DAYS[asOfIdx])}. Move the timeline to the end to see it now.`));
+  n.warnings.forEach(w => p.append(el("div", "callout warn", w)));
+  n.notes.forEach(w => p.append(el("div", "callout note", w)));
+  p.append(el("h3", null, "Because"));
+  if (n.reasons.length) {
+    const ul = el("ul");
+    n.reasons.forEach(r => { const li = el("li", null, r.text); if (r.from !== n.id) li.append(el("span", "later", `  added later (${r.from})`)); ul.append(li); });
+    p.append(ul);
+  } else p.append(el("div", "empty", "No reason was given."));
+  if (n.rejected.length) { p.append(el("h3", null, "Considered and rejected")); const ul = el("ul"); n.rejected.forEach(x => ul.append(el("li", null, x))); p.append(ul); }
+  if (n.depends_on.length) { p.append(el("h3", null, "Rests on")); p.append(refList(n.depends_on, true)); }
+  if (n.dependents.length) { p.append(el("h3", null, "Relied on by")); p.append(refList(n.dependents)); }
+  if (n.history.length > 1) {
+    p.append(el("h3", null, "History"));
+    const ol = el("ol");
+    n.history.filter(h => byId[h]).forEach(h => { const li = el("li"); li.append(ref(h), document.createTextNode(" " + byId[h].decision + (byId[h].status !== "replaced" ? ", in force" : ""))); ol.append(li); });
+    p.append(ol);
+  }
+  if (n.restores.length) { p.append(el("h3", null, "Brings back")); p.append(refList(n.restores)); }
+  p.append(el("h3", null, "Source"));
+  const who = n.decided_by === "assistant_accepted" ? "Claude's suggestion, accepted by you" : n.decided_by === "user" ? "you" : "unknown";
+  const conf = n.confidence != null ? `, extraction confidence ${Math.round(n.confidence * 100)}%` : "";
+  const when = n.decided_at ? new Date(n.decided_at).toLocaleString() : "an unknown time";
+  p.append(el("div", "meta-line", `${n.topic ? "Area: " + n.topic + ". " : ""}Decided by ${who}${conf}. Recorded ${when}, session ${n.session || "unknown"}.`));
+}
+
+// ==================================================================== corrections
+let editing = null, confirmingReject = null;
+function actionBar(n) {
+  const box = el("div");
+  if (!EDIT) {
+    const h = el("div", "hint");
+    h.innerHTML = `To correct this here, run <code>dg view</code> in a terminal. Or use <code>dg confirm ${n.id}</code>, <code>dg reject ${n.id}</code> or <code>dg edit ${n.id} "new wording"</code>.`;
+    box.append(h); return box;
+  }
+  const bar = el("div", "actions");
+  if (n.status === "rejected") {
+    const undo = el("button", "btn good", "It is a decision"); undo.onclick = () => correct(n.id, "confirm");
+    bar.append(undo); box.append(bar); return box;
+  }
+  if (!n.confirmed) { const ok = el("button", "btn good", "✓ Correct"); ok.title = "This decision is right"; ok.onclick = () => correct(n.id, "confirm"); bar.append(ok); }
+  const ed = el("button", "btn", "Edit wording"); ed.onclick = () => { editing = n.id; confirmingReject = null; renderPanel(); };
+  const rj = el("button", "btn bad", "Not a decision"); rj.onclick = () => { confirmingReject = n.id; renderPanel(); };
+  bar.append(ed, rj); box.append(bar);
+  if (confirmingReject === n.id) {
+    const cb = el("div", "confirmbox");
+    const deps = n.dependents.length ? ` ${n.dependents.join(", ")} will no longer rest on it.` : "";
+    const rep = n.supersedes ? ` ${n.supersedes}, which it replaced, comes back into force.` : "";
+    cb.append(el("p", null, `Hide ${n.id} from the graph and drop its links?${rep}${deps} You can undo this.`));
+    const note = el("input", "note"); note.placeholder = "Why? Optional, for example “just brainstorming”"; cb.append(note);
+    const row = el("div", "actions"); row.style.marginTop = "9px";
+    const yes = el("button", "btn bad", "Reject " + n.id), no = el("button", "btn", "Cancel");
+    yes.onclick = () => correct(n.id, "reject", { note: note.value });
+    no.onclick = () => { confirmingReject = null; renderPanel(); };
+    note.addEventListener("keydown", e => { if (e.key === "Enter") yes.click(); if (e.key === "Escape") no.click(); });
+    row.append(yes, no); cb.append(row); box.append(cb);
+    setTimeout(() => note.focus(), 0);
+  }
+  return box;
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function correct(id, action, extra = {}) {
+  document.querySelectorAll("aside button").forEach(b => b.disabled = true);
+  try {
+    const res = await fetch("api/correct", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ t: EDIT.token, target: id, action, ...extra }) });
+    const out = await res.json();
+    if (out.ok && action === "reject" && cards[id] && !showReplaced && !REDUCED) {   // fold the card away first
+      cards[id].classList.add("folding"); await wait(520);
+    }
+    if (out.data) { FULL = DATA = out.data; byId = Object.fromEntries(DATA.nodes.map(n => [n.id, n])); renderAreas(); buildTimeline(); }
+    editing = null; confirmingReject = null;
+    if (action === "reject" && out.ok && !showReplaced) selected = null;
+    renderStats(); render(); renderPanel();
+    toast(out.message, !out.ok, out.ok && action === "reject" ? () => correct(id, "confirm") : null);
+  } catch (e) {
+    toast("Couldn't save. Check that dg view is still running in your terminal.", true);
+    renderPanel();
+  }
+}
+let toastTimer = null;
+function toast(msg, err, undo, action) {
+  const t = $("#toast"), ms = undo || action ? 9000 : 5000;
+  t.innerHTML = ""; t.className = err ? "err" : "";
+  t.append(el("span", null, msg));
+  if (undo) { const u = el("button", null, "Undo"); u.onclick = () => { t.classList.remove("show"); undo(); }; t.append(u); }
+  if (action) { const a = el("button", null, action.label); a.onclick = () => { t.classList.remove("show"); action.run(); }; t.append(a); }
+  const bar = el("div", "bar"); bar.style.setProperty("--t", ms + "ms"); t.append(bar);
+  requestAnimationFrame(() => t.classList.add("show"));
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), ms);
+}
+
+// ==================================================================== camera, minimap
+let camAnim = null;
+function apply() {
+  const w = $("#world");
+  w.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.k})`;
+  w.style.setProperty("--inv", (1 / view.k).toFixed(3));
+  w.classList.toggle("far", view.k < 0.6);
+  const g = 24 * view.k, gf = 72 * view.k;   // two dot layers at different depths: near moves 1:1, far drifts slower
+  $("#grid").style.backgroundSize = `${g}px ${g}px`; $("#grid").style.backgroundPosition = `${view.x}px ${view.y}px`;
+  $("#gridFar").style.backgroundSize = `${gf}px ${gf}px`; $("#gridFar").style.backgroundPosition = `${view.x * 0.45}px ${view.y * 0.45}px`;
+  drawMini();
+}
+function glideTo(target, ms = 850) {
+  cancelAnimationFrame(camAnim);
+  if (REDUCED) { view = target; apply(); return; }
+  const from = { ...view }, t0 = performance.now();
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;   // ease in-out: lift off, glide, settle
+  const step = now => {
+    const t = Math.min(1, (now - t0) / ms), e = ease(t);
+    view = { x: from.x + (target.x - from.x) * e, y: from.y + (target.y - from.y) * e, k: from.k + (target.k - from.k) * e };
+    apply();
+    if (t < 1) camAnim = requestAnimationFrame(step);
+  };
+  camAnim = requestAnimationFrame(step);
+}
+function bounds() {
+  const ids = Object.keys(cards); if (!ids.length) return null;
+  return { x1: Math.min(...ids.map(i => pos[i].x)), y1: Math.min(...ids.map(i => pos[i].y)) - 90,
+           x2: Math.max(...ids.map(i => pos[i].x + pos[i].w)), y2: Math.max(...ids.map(i => pos[i].y + pos[i].h)) };
+}
+function fitTarget() {
+  const b = bounds(); if (!b) return { ...view };
+  const st = $("#stage").getBoundingClientRect(), pad = 64, right = SMALL ? 0 : 160;
+  const k = Math.min(1.12, (st.width - pad * 2 - right) / (b.x2 - b.x1), (st.height - pad * 2) / (b.y2 - b.y1));
+  return { k, x: pad - b.x1 * k + Math.max(0, (st.width - pad * 2 - right - (b.x2 - b.x1) * k) / 2),
+           y: pad - b.y1 * k + Math.max(0, (st.height - pad * 2 - (b.y2 - b.y1) * k) / 2) };
+}
+function fit(instant) { const t = fitTarget(); if (instant) { view = t; apply(); } else glideTo(t); }
+function focusOn(id) {
+  const st = $("#stage").getBoundingClientRect(), p = pos[id];
+  const sx = p.x * view.k + view.x, sy = p.y * view.k + view.y, m = 50;
+  if (sx < m || sy < m || sx + p.w * view.k > st.width - m - 220 || sy + p.h * view.k > st.height - m) {
+    const k = Math.max(view.k, 0.75);
+    glideTo({ k, x: (st.width - 220) / 2 - (p.x + p.w / 2) * k, y: st.height / 2 - (p.y + p.h / 2) * k });
+  }
+}
+function zoomBy(f) {
+  const st = $("#stage").getBoundingClientRect(), mx = st.width / 2, my = st.height / 2;
+  const k = Math.min(2.5, Math.max(0.2, view.k * f));
+  glideTo({ k, x: mx - (mx - view.x) * (k / view.k), y: my - (my - view.y) * (k / view.k) }, 420);
+}
+let miniTx = null;
+function drawMini() {
+  const cv = $("#mini"); if (!cv || SMALL) return;
+  const b = bounds(); const dpr = devicePixelRatio || 1;
+  const W = cv.clientWidth, H = cv.clientHeight;
+  if (cv.width !== W * dpr) { cv.width = W * dpr; cv.height = H * dpr; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  if (!b) return;
+  const pad = 12, s = Math.min((W - pad * 2) / (b.x2 - b.x1), (H - pad * 2) / (b.y2 - b.y1));
+  const ox = pad + ((W - pad * 2) - (b.x2 - b.x1) * s) / 2 - b.x1 * s, oy = pad + ((H - pad * 2) - (b.y2 - b.y1) * s) / 2 - b.y1 * s;
+  miniTx = { s, ox, oy };
+  ctx.lineWidth = 1; ctx.strokeStyle = "rgba(251,248,239,.25)";
+  EDGES.forEach(e => {
+    const a = pos[e.from], c = pos[e.to]; if (!a || !c) return;
+    ctx.beginPath(); ctx.moveTo(ox + (a.x + a.w) * s, oy + (a.y + a.h / 2) * s); ctx.lineTo(ox + c.x * s, oy + (c.y + c.h / 2) * s); ctx.stroke();
+  });
+  const dim = $("#stage").classList.contains("dim");
+  for (const id in cards) {
+    const p = pos[id], c = cards[id], n = byId[id];
+    const hot = c.classList.contains("sel") || c.classList.contains("up") || c.classList.contains("down");
+    ctx.globalAlpha = dim && !hot ? .3 : 1;
+    ctx.fillStyle = n.status === "replaced" || n.status === "rejected" ? "rgba(243,239,226,.35)" : "#FBF8EF";
+    ctx.beginPath(); ctx.roundRect(ox + p.x * s, oy + p.y * s, Math.max(3, p.w * s), Math.max(2, p.h * s), 2); ctx.fill();
+    ctx.fillStyle = STATUS_COLOR[n.status]; ctx.fillRect(ox + p.x * s, oy + p.y * s, 2, Math.max(2, p.h * s));
+    if (c.classList.contains("sel")) { ctx.strokeStyle = "#8EC2EC"; ctx.lineWidth = 1.5; ctx.strokeRect(ox + p.x * s - 2, oy + p.y * s - 2, p.w * s + 4, p.h * s + 4); }
+  }
+  ctx.globalAlpha = 1;
+  const st = $("#stage").getBoundingClientRect();     // the part of the graph you're looking at
+  const vx = (-view.x / view.k) * s + ox, vy = (-view.y / view.k) * s + oy, vw = (st.width / view.k) * s, vh = (st.height / view.k) * s;
+  ctx.fillStyle = "rgba(142,194,236,.10)"; ctx.fillRect(vx, vy, vw, vh);
+  ctx.strokeStyle = "rgba(185,219,246,.85)"; ctx.lineWidth = 1.2; ctx.strokeRect(vx, vy, vw, vh);
+}
+function miniJump(ev, smooth) {
+  if (!miniTx) return;
+  const r = $("#mini").getBoundingClientRect(), st = $("#stage").getBoundingClientRect();
+  const gx = (ev.clientX - r.left - miniTx.ox) / miniTx.s, gy = (ev.clientY - r.top - miniTx.oy) / miniTx.s;
+  const t = { k: view.k, x: st.width / 2 - gx * view.k, y: st.height / 2 - gy * view.k };
+  if (smooth) glideTo(t, 500); else { cancelAnimationFrame(camAnim); view = t; apply(); }
+}
+(() => {
+  const stage = $("#stage"), spot = $("#spot"); let drag = null, miniDrag = false;
+  const mini = $(".minimap");
+  stage.addEventListener("scroll", () => { stage.scrollLeft = 0; stage.scrollTop = 0; });   // the camera moves the world; the stage never scrolls
+  mini.addEventListener("pointerdown", e => { e.stopPropagation(); miniDrag = true; miniJump(e, true); });
+  window.addEventListener("pointermove", e => { if (miniDrag) miniJump(e, false); });
+  window.addEventListener("pointerup", () => { miniDrag = false; });
+  // a click or drag on the graph never starts a text selection, and clears any left over from before
+  stage.addEventListener("mousedown", e => {
+    if (e.target.closest("#list, input, textarea")) return;
+    e.preventDefault();
+    const sel = getSelection(); if (sel && !sel.isCollapsed) sel.removeAllRanges();
+    // preventing the default also stops focus from moving, so let go of the search box (or any field) ourselves
+    const a = document.activeElement;
+    if (a && a !== document.body && !stage.contains(a) && a.matches("input, textarea, select, button")) a.blur();
+  });
+  stage.addEventListener("dblclick", e => { if (!e.target.closest("#list")) { const sel = getSelection(); if (sel) sel.removeAllRanges(); } });
+  stage.addEventListener("pointerdown", e => {
+    if (e.target.closest(".card, .zoom, .minimap, #timeline, #expmenu, #list, .ftitle")) return;
+    cancelAnimationFrame(camAnim);
+    drag = { x: e.clientX - view.x, y: e.clientY - view.y, moved: false }; stage.classList.add("dragging");
+  });
+  stage.addEventListener("pointermove", e => {      // a soft light follows the cursor across the field
+    if (REDUCED) return;
+    const r = stage.getBoundingClientRect();
+    spot.style.setProperty("--sx", (e.clientX - r.left - 280) + "px"); spot.style.setProperty("--sy", (e.clientY - r.top - 280) + "px");
+  });
+  stage.addEventListener("pointerleave", () => { spot.style.setProperty("--sx", "-999px"); });
+  window.addEventListener("pointermove", e => { if (!drag) return; drag.moved = true; view.x = e.clientX - drag.x; view.y = e.clientY - drag.y; apply(); });
+  window.addEventListener("pointerup", () => { if (drag && !drag.moved) select(null); drag = null; stage.classList.remove("dragging"); });
+  stage.addEventListener("wheel", e => {
+    e.preventDefault(); cancelAnimationFrame(camAnim);
+    const r = stage.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    const k = Math.min(2.5, Math.max(0.2, view.k * Math.exp(-e.deltaY * 0.0015)));
+    view.x = mx - (mx - view.x) * (k / view.k); view.y = my - (my - view.y) * (k / view.k); view.k = k; apply();
+  }, { passive: false });
+  window.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; }
+    if (e.target.tagName === "TEXTAREA") return;
+    if (e.target.id === "palq") return;
+    if (e.target.tagName === "INPUT") { if (e.key === "Escape") { e.target.value = ""; applyHighlight(); e.target.blur(); } return; }
+    if (e.key === "Escape") select(null);
+    if (e.key === "f" || e.key === "F") fit();
+    if (e.key === "+" || e.key === "=") zoomBy(1.25);
+    if (e.key === "-") zoomBy(0.8);
+    if (e.key === "/") { e.preventDefault(); $("#q").focus(); }
+    if (e.key.startsWith("Arrow") && !listMode && !e.target.closest("#timeline, #list, select")) { e.preventDefault(); navigate(e.key); }
+  });
+})();
+
+$("#q").addEventListener("input", applyHighlight);
+$("#showReplaced").addEventListener("change", e => {
+  showReplaced = e.target.checked;
+  if (!showReplaced && selected && ["replaced", "rejected"].includes(byId[selected].status)) selected = null;
+  render(); renderPanel(); setTimeout(() => fit(), 90);
+});
+$("#fit").onclick = () => fit();
+$("#zin").onclick = () => zoomBy(1.25);
+$("#zout").onclick = () => zoomBy(0.8);
+let resizeTimer = null;
+// The page can load while its window is still small (some app panes open narrow, then grow), so a
+// noticeable size change re-chooses the layout instead of only zooming the old one.
+function relayoutIfNeeded() {
+  const r = $("#stage").getBoundingClientRect();
+  const small = SMALL_MQ.matches, was = laidOutFor;
+  const changed = small !== SMALL || !was || was.w < 50 || was.h < 50 ||
+    Math.abs(r.width - was.w) / Math.max(was.w, 1) > 0.15 || Math.abs(r.height - was.h) / Math.max(was.h, 1) > 0.15;
+  if (changed && r.width > 50 && r.height > 50) {
+    SMALL = small; COLW = SMALL ? 224 : 264; GAPX = SMALL ? 70 : 120;
+    render();
+  }
+  fit(); drawMini();
+}
+window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(relayoutIfNeeded, 150); });
+if (window.ResizeObserver) new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(relayoutIfNeeded, 150); }).observe($("#stage"));
+
+function renderEmpty() {
+  const box = $("#empty");
+  const mini = $(".minimap");
+  if (DATA.nodes.length) { box.hidden = true; if (mini) mini.style.display = ""; return; }
+  if (mini) mini.style.display = "none";
+  box.hidden = false; box.innerHTML = "";
+  box.append(el("div", "orb"), el("h2", null, "No decisions yet"));
+  const p1 = el("p"); p1.innerHTML = "Decisions you make with Claude in this project are recorded when the conversation is compacted: run <code>/compact</code>, or let Claude Code do it when a session gets long.";
+  box.append(p1);
+  if (EDIT && EDIT.live) { const l = el("div", "live"); l.append(el("i"), document.createTextNode("Listening. New decisions will appear here on their own.")); box.append(l); }
+  else { const p2 = el("p"); p2.innerHTML = "Want to see what it looks like first? Run <code>dg demo</code> in a terminal."; box.append(p2); }
+}
+
+// ==================================================================== families: each foundation with what rests on it
+function saveCollapsed() { try { localStorage.setItem("dg-collapsed-" + DATA.project, JSON.stringify([...collapsed])); } catch (e) {} }
+function familiesLayout(cols, preds, standalone, delayFor) {
+  const world = $("#world"), FP = 22, TITLE = 44, FGAP = 56, BGAP = 36;
+  const layerOf = {}; cols.forEach((c, L) => c.forEach(id => layerOf[id] = L));
+  const linked = cols.flat();
+  // each decision sits under one parent: the most specific thing it rests on (the deepest one)
+  const parentOf = {}, kids = {};
+  linked.forEach(id => {
+    const ps = preds[id].filter(p => layerOf[p] != null).sort((a, b) => layerOf[b] - layerOf[a] || num(a) - num(b));
+    parentOf[id] = ps[0] || null;
+    if (ps[0]) (kids[ps[0]] ||= []).push(id);
+  });
+  Object.values(kids).forEach(k => k.sort((a, b) => num(a) - num(b)));
+  const roots = linked.filter(id => !parentOf[id]);
+  familyOf = {}; memberOf = {};
+  const membersOf = r => { const out = [], st = [r]; while (st.length) { const x = st.pop(); out.push(x); (kids[x] || []).forEach(k => st.push(k)); } return out; };
+  roots.forEach(r => membersOf(r).forEach(m => { familyOf[m] = r; memberOf[m] = r; }));
+  // lay each family out as a tree, left to right: a parent on the row of its first child
+  let order = 0;
+  const blocks = roots.map(r => {
+    const members = membersOf(r), shut = collapsed.has(r) && members.length > 1;
+    const rel = {}; let maxDepth = 0;
+    const show = shut ? [r] : members;
+    show.forEach(id => makeCard(id, delayFor(id, 200 + Math.min(order++, 30) * 45)));
+    const walk = (id, depth, y) => {
+      maxDepth = Math.max(maxDepth, depth);
+      rel[id] = { x: depth * (COLW + FGAP), y };
+      const h = cards[id].offsetHeight;
+      let next = y;
+      const ks = shut ? [] : (kids[id] || []);
+      if (!ks.length) return y + h + GAPY;
+      ks.forEach(k => { next = walk(k, depth + 1, next); });
+      return Math.max(y + h + GAPY, next);
+    };
+    const inner = walk(r, 0, 0) - GAPY;
+    return { r, members, shut, rel, w: (maxDepth + 1) * (COLW + FGAP) - FGAP + FP * 2, h: inner + FP * 2 + TITLE };
+  });
+  blocks.sort((a, b) => b.members.length - a.members.length || num(a.r) - num(b.r));
+  // pack families into rows; try row widths and keep the one that shows everything biggest
+  const st = $("#stage").getBoundingClientRect();
+  const fitW = Math.max(300, st.width - 128 - (SMALL ? 0 : 160)), fitH = Math.max(300, st.height - 128);
+  const pack = T => {
+    let x = 0, y = 0, rowH = 0, W = 0; const at = [];
+    blocks.forEach(b => {
+      if (x > 0 && x + b.w > T) { x = 0; y += rowH + BGAP; rowH = 0; }
+      at.push({ x, y }); x += b.w + BGAP; rowH = Math.max(rowH, b.h); W = Math.max(W, x - BGAP);
+    });
+    return { at, W, H: y + rowH };
+  };
+  const widest = Math.max(...blocks.map(b => b.w)), total = blocks.reduce((t, b) => t + b.w + BGAP, 0);
+  const avgSt = 80, nSt = standalone.length;
+  let best = null, bestK = -1;
+  for (let T = widest; T <= total + 1; T += Math.max(60, (total - widest) / 40)) {
+    const p = pack(T);
+    const per = Math.max(3, Math.floor((p.W + GRID_GAP) / (COLW + GRID_GAP)));
+    const hs = nSt ? 90 + Math.ceil(nSt / per) * (avgSt + GRID_GAP) : 0;
+    const k = Math.min(fitW / Math.max(p.W, COLW), fitH / (p.H + hs + 90));
+    if (k > bestK + 1e-3) { bestK = k; best = p; }
+  }
+  best = best || pack(total);
+  let bottom = 0, right = 0;
+  blocks.forEach((b, i) => {
+    const { x, y } = best.at[i];
+    const box = el("div", "family");
+    Object.assign(box.style, { left: x + "px", top: y + "px", width: b.w + "px", height: b.h + "px" });
+    const t = el("div", "ftitle"), n = byId[b.r];
+    const subs = b.members.length - 1;
+    t.append(el("b", null, b.r));
+    const area = n.topic ? n.topic.charAt(0).toUpperCase() + n.topic.slice(1) + ": " : "";
+    const txt = el("span", "ftxt", subs ? `${area}${subs} sub-decision${subs === 1 ? "" : "s"}${b.shut ? ", folded" : ""}`
+                                         : `${area}what rests on it sits in another family`);
+    txt.title = txt.textContent;
+    t.append(txt);
+    if (subs) {
+      const btn = el("button", null, b.shut ? "▸" : "▾");
+      btn.setAttribute("aria-label", (b.shut ? "Unfold " : "Fold ") + b.r + "'s family");
+      btn.setAttribute("aria-expanded", !b.shut);
+      btn.onclick = ev => { ev.stopPropagation(); b.shut ? collapsed.delete(b.r) : collapsed.add(b.r); saveCollapsed(); render(); };
+      btn.onpointerdown = ev => ev.stopPropagation();
+      t.append(btn);
+    }
+    box.append(t);
+    world.prepend(box);
+    Object.entries(b.rel).forEach(([id, r]) => { if (cards[id]) place(id, x + FP + r.x, y + TITLE + FP + r.y); });
+    bottom = Math.max(bottom, y + b.h); right = Math.max(right, x + b.w);
+  });
+  return { bottom: bottom + 10, right };
+}
+function setLayout(mode) {
+  layoutMode = mode;
+  try { localStorage.setItem("dg-layout", mode); } catch (e) {}
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.l === mode));
+  render(); if (!selected) renderPanel(); setTimeout(() => fit(), 90);
+}
+document.querySelectorAll(".seg button").forEach(b => b.onclick = () => setLayout(b.dataset.l));
+document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.l === layoutMode));
+
+// ==================================================================== areas
+function renderAreas() {
+  const sel = $("#area"), counts = {};
+  DATA.nodes.forEach(n => { if (n.topic && n.status !== "replaced" && n.status !== "rejected") counts[n.topic] = (counts[n.topic] || 0) + 1; });
+  const names = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
+  sel.hidden = names.length < 2;
+  if (topicFilter && !counts[topicFilter]) topicFilter = null;
+  sel.innerHTML = "";
+  sel.append(new Option(`All areas (${names.length})`, ""));
+  names.forEach(t => sel.append(new Option(`${t} (${counts[t]})`, t)));
+  sel.value = topicFilter || "";
+}
+$("#area").addEventListener("change", e => {
+  topicFilter = e.target.value || null;
+  if (selected && byId[selected] && topicFilter && byId[selected].topic !== topicFilter) selected = null;
+  render(); renderPanel(); setTimeout(() => fit(), 90);
+});
+
+// ==================================================================== go to a decision (Ctrl+K)
+let palIdx = 0, palHits = [], palReturn = null;
+function openPalette() {
+  palReturn = document.activeElement; palIdx = 0;
+  $("#palette").hidden = false; $("#palq").value = ""; renderPalette();
+  $("#palq").focus();
+}
+function closePalette() { $("#palette").hidden = true; if (palReturn && palReturn.focus) palReturn.focus(); }
+function paletteHits(q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  return DATA.nodes.filter(n => n.status !== "rejected").map(n => {
+    const hay = `${n.id} ${n.decision} ${n.topic || ""}`.toLowerCase();
+    if (words.some(w => !hay.includes(w))) return null;
+    let sc = n.status === "replaced" ? 0 : 10;
+    if (words.length === 1 && n.id.toLowerCase() === words[0]) sc += 100;
+    words.forEach(w => { if (new RegExp("\\b" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).test(n.decision.toLowerCase())) sc += 3; });
+    return { n, sc };
+  }).filter(Boolean).sort((a, b) => b.sc - a.sc || num(b.n.id) - num(a.n.id)).slice(0, 9).map(x => x.n);
+}
+function renderPalette() {
+  palHits = paletteHits($("#palq").value);
+  palIdx = Math.max(0, Math.min(palIdx, palHits.length - 1));
+  const ul = $("#palres"); ul.innerHTML = "";
+  if (!palHits.length) { ul.append(el("li", "none", "No decision matches.")); return; }
+  palHits.forEach((n, i) => {
+    const li = el("li", i === palIdx ? "on" : null);
+    li.id = "pal-" + i; li.setAttribute("role", "option"); li.setAttribute("aria-selected", i === palIdx);
+    li.append(el("span", "pid", n.id), el("span", "ptxt", n.decision));
+    if (n.status !== "ok") li.append(el("span", "pst", LABEL[n.status]));
+    li.onmousedown = e => { e.preventDefault(); goTo(n.id); };
+    li.onmousemove = () => { if (palIdx !== i) { palIdx = i; renderPalette(); } };
+    ul.append(li);
+  });
+  $("#palq").setAttribute("aria-activedescendant", "pal-" + palIdx);
+  const on = ul.querySelector(".on"); if (on) on.scrollIntoView({ block: "nearest" });
+}
+$("#palq").addEventListener("input", () => { palIdx = 0; renderPalette(); });
+$("#palq").addEventListener("keydown", e => {
+  if (e.key === "ArrowDown") { e.preventDefault(); palIdx = (palIdx + 1) % Math.max(1, palHits.length); renderPalette(); }
+  if (e.key === "ArrowUp") { e.preventDefault(); palIdx = (palIdx - 1 + palHits.length) % Math.max(1, palHits.length); renderPalette(); }
+  if (e.key === "Enter" && palHits[palIdx]) { e.preventDefault(); goTo(palHits[palIdx].id); }
+  if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closePalette(); }
+});
+$("#palette").addEventListener("mousedown", e => { if (e.target.id === "palette") closePalette(); });
+function centerOn(id) {
+  const st = $("#stage").getBoundingClientRect(), p = pos[id]; if (!p) return;
+  const k = Math.max(view.k, 0.85);
+  glideTo({ k, x: (st.width - (SMALL ? 0 : 220)) / 2 - (p.x + p.w / 2) * k, y: st.height / 2 - (p.y + p.h / 2) * k });
+}
+function goTo(id) {
+  $("#palette").hidden = true;
+  const n = byId[id]; if (!n) return;
+  if (topicFilter && n.topic !== topicFilter) { topicFilter = null; $("#area").value = ""; render(); }
+  if (listMode) setListMode(false);
+  select(id);
+  setTimeout(() => centerOn(id), 30);
+}
+
+// ==================================================================== arrow keys: follow links
+function upNeighbours(id) {
+  return [...new Set(byId[id].depends_on.map(d => cards[d] ? d : (byId[d] && cards[currentOf(d)] ? currentOf(d) : null)).filter(Boolean))];
+}
+function downNeighbours(id) { return byId[id].dependents.filter(d => cards[d]); }
+function navigate(key) {
+  const ids = Object.keys(cards); if (!ids.length) return;
+  if (!selected || !cards[selected]) {
+    select(ids.sort((a, b) => pos[a].x - pos[b].x || pos[a].y - pos[b].y)[0]); return;
+  }
+  const P = pos[selected], cx = P.x + P.w / 2, cy = P.y + P.h / 2;
+  const nearest = cands => cands.sort((a, b) => Math.abs(pos[a].y + pos[a].h / 2 - cy) - Math.abs(pos[b].y + pos[b].h / 2 - cy))[0];
+  let pick = null;
+  if (key === "ArrowLeft") pick = nearest(upNeighbours(selected));
+  if (key === "ArrowRight") pick = nearest(downNeighbours(selected));
+  if (!pick) {   // no link that way: move to the closest card in that direction
+    const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[key];
+    let best = Infinity;
+    ids.forEach(o => {
+      if (o === selected) return;
+      const dx = pos[o].x + pos[o].w / 2 - cx, dy = pos[o].y + pos[o].h / 2 - cy;
+      const along = dx * dir[0] + dy * dir[1], across = Math.abs(dx * dir[1] + dy * dir[0]);
+      if (along < 10) return;
+      const sc = along + across * 2.5;
+      if (sc < best) { best = sc; pick = o; }
+    });
+  }
+  if (pick) select(pick);
+}
+
+// ==================================================================== list view
+let listSort = { key: "id", dir: 1 };
+const ORDER = { stale: 0, indirect: 1, resolved: 2, ok: 3, replaced: 4, rejected: 5 };
+function setListMode(on) {
+  listMode = on;
+  document.body.classList.toggle("listing", on);
+  $("#listBtn").textContent = on ? "Graph" : "List";
+  $("#listBtn").setAttribute("aria-pressed", on);
+  $("#listBtn").title = on ? "Back to the graph" : "Show the decisions as a table";
+  if (on) renderList();
+}
+$("#listBtn").onclick = () => setListMode(!listMode);
+function renderList() {
+  const box = $("#list"), keep = box.scrollTop, q = $("#q").value.trim().toLowerCase();
+  const ts = getSelection();
+  if (ts && !ts.isCollapsed && box.contains(ts.anchorNode)) {   // someone is selecting text here: only move the highlight
+    box.querySelectorAll("tbody tr").forEach(tr => tr.classList.toggle("sel", tr.dataset.id === selected));
+    return;
+  }
+  const rows = visibleNodes().filter(n => matchNode(n, q));
+  const keyFn = { id: n => num(n.id), decision: n => n.decision.toLowerCase(), topic: n => n.topic || "~",
+                  status: n => ORDER[n.status] ?? 9, decided_at: n => n.decided_at || "", rests: n => n.depends_on.length }[listSort.key];
+  rows.sort((a, b) => { const x = keyFn(a), y = keyFn(b); return (x < y ? -1 : x > y ? 1 : num(a.id) - num(b.id)) * listSort.dir; });
+  box.innerHTML = "";
+  box.append(el("p", "count", `${rows.length} decision${rows.length === 1 ? "" : "s"}` +
+    (asOfIdx != null ? ` as of ${fmtDay(DAYS[asOfIdx])}` : "") + ". Click a row, or press Enter on it, for details."));
+  const t = el("table"), cap = el("caption", "sr-only", "Decisions"); t.append(cap);
+  const head = el("thead"), hr = el("tr");
+  [["id", "ID"], ["decision", "Decision"], ["topic", "Area"], ["status", "Status"], ["decided_at", "Decided"], ["rests", "Rests on"]].forEach(([k, label]) => {
+    const th = el("th"); th.scope = "col";
+    if (listSort.key === k) th.setAttribute("aria-sort", listSort.dir > 0 ? "ascending" : "descending");
+    const b = el("button", null, label + (listSort.key === k ? (listSort.dir > 0 ? " ↑" : " ↓") : ""));
+    b.onclick = () => { listSort = { key: k, dir: listSort.key === k ? -listSort.dir : 1 }; renderList(); };
+    th.append(b); hr.append(th);
+  });
+  head.append(hr); t.append(head);
+  const body = el("tbody");
+  rows.forEach(n => {
+    const tr = el("tr", n.id === selected ? "sel" : null); tr.tabIndex = 0; tr.dataset.id = n.id;
+    const dec = el("td", "dec", n.decision);
+    if (n.new) dec.append(" ", el("span", "newmark", "New")); else if (n.changed) dec.append(" ", el("span", "newmark changed", "Changed"));
+    const st = el("td", "muted"); const dot = el("span", "dot"); dot.style.background = STATUS_COLOR[n.status]; st.append(dot, LABEL[n.status]);
+    tr.append(el("td", "id", n.id), dec, el("td", "muted", n.topic || ""), st,
+              el("td", "muted", n.decided_at ? new Date(n.decided_at).toLocaleDateString() : ""), el("td", "muted", n.depends_on.join(", ")));
+    tr.onclick = () => select(n.id);
+    tr.onkeydown = e => {
+      if (e.key === "Enter") select(n.id);
+      if (e.key === "ArrowDown" && tr.nextSibling) { e.preventDefault(); tr.nextSibling.focus(); }
+      if (e.key === "ArrowUp" && tr.previousSibling) { e.preventDefault(); tr.previousSibling.focus(); }
+    };
+    body.append(tr);
+  });
+  t.append(body); box.append(t);
+  box.scrollTop = keep;
+}
+$("#list").addEventListener("pointerdown", e => e.stopPropagation());
+$("#list").addEventListener("wheel", e => e.stopPropagation());
+
+// ==================================================================== time scrubber: the project as it was on any day
+let DAYS = [], playTimer = null;
+const dayOf = n => (n.decided_at || "").slice(0, 10);
+const fmtDay = d => new Date(d + "T12:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+function buildTimeline() {
+  DAYS = [...new Set(FULL.nodes.filter(n => n.status !== "rejected" && dayOf(n)).map(dayOf))].sort();
+  const tl = $("#timeline");
+  tl.hidden = DAYS.length < 2;
+  if (tl.hidden) return;
+  const r = $("#tlr"); r.min = 0; r.max = DAYS.length; r.step = 1;
+  if (asOfIdx != null && asOfIdx >= DAYS.length) asOfIdx = null;
+  r.value = asOfIdx == null ? DAYS.length : asOfIdx;
+  r.setAttribute("aria-valuetext", asOfIdx == null ? "Now" : fmtDay(DAYS[asOfIdx]));
+  tlLabel();
+}
+function deriveAt(day) {
+  const src = FULL.nodes.filter(n => n.status !== "rejected");
+  const by = Object.fromEntries(src.map(n => [n.id, n]));
+  const here = new Set(src.filter(n => (dayOf(n) || "0000") <= day).map(n => n.id));
+  const nextOf = id => { const s = by[id].superseded_by; return s && here.has(s) ? s : null; };
+  const active = id => here.has(id) && !nextOf(id);
+  const cur = id => { const seen = new Set(); while (nextOf(id) && !seen.has(id)) { seen.add(id); id = nextOf(id); } return id; };
+  const holds = id => active(id) || [...here].some(x => active(x) && (by[x].restores || []).includes(id));
+  const st = {};
+  here.forEach(id => {
+    if (!active(id)) { st[id] = "replaced"; return; }
+    const deps = by[id].depends_on.filter(d => here.has(d));
+    st[id] = deps.some(d => !holds(d)) ? "stale" : deps.some(d => !active(d)) ? "resolved" : "ok";
+  });
+  const memo = {};
+  const upStale = (id, seen) => {
+    if (id in memo) return memo[id];
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return memo[id] = by[id].depends_on.filter(d => here.has(d)).some(d => st[d] === "stale" || upStale(d, seen));
+  };
+  here.forEach(id => { if (st[id] === "ok" && upStale(id, new Set())) st[id] = "indirect"; });
+  const nodes = src.filter(n => here.has(n.id)).map(n => ({
+    ...n, status: st[n.id], superseded_by: nextOf(n.id), new: false, changed: false,
+    depends_on: n.depends_on.filter(d => here.has(d)), dependents: n.dependents.filter(d => here.has(d)),
+    restores: (n.restores || []).filter(d => here.has(d)), history: n.history.filter(h => here.has(h)),
+    warnings: n.depends_on.filter(d => here.has(d) && !holds(d)).map(d => `Rests on ${d}, which had been replaced by ${cur(d)} by this date.`),
+    notes: nextOf(n.id) ? [`Replaced by ${nextOf(n.id)} by this date.`] : [],
+  }));
+  return { ...FULL, nodes, edges: FULL.edges.filter(e => here.has(e.from) && here.has(e.to)) };
+}
+function setAsOf(idx) {
+  asOfIdx = idx >= DAYS.length ? null : idx;
+  DATA = asOfIdx == null ? FULL : deriveAt(DAYS[asOfIdx]);
+  byId = Object.fromEntries(DATA.nodes.map(n => [n.id, n]));
+  if (selected && !byId[selected]) selected = null;
+  document.body.classList.toggle("timetravel", asOfIdx != null);
+  $("#tlr").value = asOfIdx == null ? DAYS.length : asOfIdx;
+  $("#tlr").setAttribute("aria-valuetext", asOfIdx == null ? "Now" : fmtDay(DAYS[asOfIdx]));
+  renderStats(); renderAreas(); render(); renderPanel(); tlLabel();
+}
+function tlLabel() {
+  const act = DATA.nodes.filter(n => n.status !== "replaced" && n.status !== "rejected").length;
+  $("#tll").textContent = asOfIdx == null ? `Now: ${act} in force` : `${fmtDay(DAYS[asOfIdx])}: ${act} in force`;
+}
+function stopPlay() { clearTimeout(playTimer); playTimer = null; $("#tlp").textContent = "▶"; $("#tlp").setAttribute("aria-label", "Play the project's history"); }
+$("#tlp").onclick = () => {
+  if (playTimer) { stopPlay(); return; }
+  let i = asOfIdx == null || asOfIdx >= DAYS.length - 1 ? 0 : asOfIdx + 1;
+  $("#tlp").textContent = "❚❚"; $("#tlp").setAttribute("aria-label", "Pause");
+  const step = () => {
+    setAsOf(i); fit();
+    if (i >= DAYS.length) { stopPlay(); return; }
+    i++; playTimer = setTimeout(step, REDUCED ? 600 : 1500);
+  };
+  step();
+};
+let scrubRaf = null;
+$("#tlr").addEventListener("input", e => {
+  stopPlay();
+  cancelAnimationFrame(scrubRaf);
+  scrubRaf = requestAnimationFrame(() => setAsOf(+e.target.value));
+});
+$("#tlr").addEventListener("change", () => fit());
+
+// ==================================================================== download as an image
+function download(blob, name) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function graphSVG() {
+  const ids = Object.keys(cards); if (!ids.length) return null;
+  const esc = x => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const b = bounds(), pad = 48, top = 70;
+  const x0 = b.x1 - pad, y0 = b.y1 - pad - top, W = Math.ceil(b.x2 - b.x1 + pad * 2), H = Math.ceil(b.y2 - b.y1 + pad * 2 + top);
+  const ctx = document.createElement("canvas").getContext("2d");
+  const SERIF = "Georgia, 'Times New Roman', serif", SANS = "'Segoe UI', Arial, sans-serif";
+  const wrap = (text, maxW, font, maxLines) => {
+    ctx.font = font; const words = text.split(/\s+/), lines = []; let line = "";
+    for (const w of words) {
+      const t = line ? line + " " + w : w;
+      if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+    }
+    if (line) lines.push(line);
+    if (lines.length > maxLines) { const cut = lines.slice(0, maxLines); let l = cut[maxLines - 1];
+      while (ctx.measureText(l + "…").width > maxW && l.length) l = l.slice(0, -1); cut[maxLines - 1] = l.replace(/\s+\S*$/, "") + "…"; return cut; }
+    return lines;
+  };
+  const o = [`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${x0} ${y0} ${W} ${H}">`,
+    `<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2B3442"/><stop offset="1" stop-color="#171C24"/></linearGradient>`];
+  [["a", "#C9D3E0"], ["r", "#E39486"], ["b", "#8EC2EC"]].forEach(([k, c]) => o.push(
+    `<marker id="m${k}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9 Q3,5 1,1 z" fill="${c}"/></marker>`));
+  o.push(`</defs><rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="url(#bg)"/>`);
+  const asOf = asOfIdx != null ? `as of ${fmtDay(DAYS[asOfIdx])}` : `on ${new Date().toLocaleDateString()}`;
+  const act = DATA.nodes.filter(n => n.status !== "replaced" && n.status !== "rejected").length;
+  o.push(`<text x="${x0 + pad}" y="${y0 + pad + 6}" font-family="${SERIF}" font-size="24" fill="#FBF8EF">Decisions in ${esc(DATA.project)}</text>`);
+  o.push(`<text x="${x0 + pad}" y="${y0 + pad + 30}" font-family="${SANS}" font-size="13" fill="#A5AEBD">${act} in force ${esc(asOf)}${topicFilter ? ", area: " + esc(topicFilter) : ""}</text>`);
+  document.querySelectorAll("#edges path.e").forEach(p => {
+    const c = p.classList, red = c.contains("via-replaced") || c.contains("dead"), blue = c.contains("via-restored") || c.contains("restores");
+    const sup = c.contains("supersedes");
+    const stroke = red ? "#E39486" : blue ? "#8EC2EC" : sup ? "#B4BCC8" : "rgba(251,248,239,.55)";
+    const dash = red ? ' stroke-dasharray="8 6"' : blue ? ' stroke-dasharray="2 5"' : sup ? ' stroke-dasharray="5 5"' : "";
+    o.push(`<path d="${p.getAttribute("d")}" fill="none" stroke="${stroke}" stroke-width="${red || blue ? 2 : 1.5}"${dash} marker-end="url(#m${red ? "r" : blue ? "b" : "a"})"/>`);
+  });
+  document.querySelectorAll("#world .section").forEach(sec => {
+    o.push(`<text x="${parseFloat(sec.style.left) || 0}" y="${(parseFloat(sec.style.top) || 0) - 6}" font-family="${SERIF}" font-style="italic" font-size="15" fill="rgba(251,248,239,.62)">${esc(sec.textContent)}</text>`);
+  });
+  document.querySelectorAll("#world .family").forEach(f => {
+    const fx = parseFloat(f.style.left), fy = parseFloat(f.style.top), fw = parseFloat(f.style.width), fh = parseFloat(f.style.height);
+    o.push(`<rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" rx="26" fill="rgba(142,194,236,.07)" stroke="rgba(185,219,246,.2)"/>`);
+    o.push(`<text x="${fx + 22}" y="${fy + 29}" font-family="${SERIF}" font-style="italic" font-size="15" fill="rgba(251,248,239,.74)">${esc(f.querySelector(".ftitle").textContent.replace(/[▸▾]/g, "").replace(/^(D-\d+)/, "$1  "))}</text>`);
+  });
+  ids.forEach(id => {
+    const p = pos[id], n = byId[id], old = n.status === "replaced" || n.status === "rejected", shape = shapeOf[id] || "card";
+    const fill = old ? "#DCD6C8" : "#FBF8EF", oldStroke = old ? ' stroke="#3A4556" stroke-opacity=".4" stroke-dasharray="5 4"' : "";
+    let tx = p.x + 18, tw = p.w - 34;
+    if (shape === "hex") {
+      const s = 18, pts = [[p.x + s, p.y], [p.x + p.w - s, p.y], [p.x + p.w, p.y + p.h / 2], [p.x + p.w - s, p.y + p.h], [p.x + s, p.y + p.h], [p.x, p.y + p.h / 2]];
+      o.push(`<polygon points="${pts.map(q => q.join(",")).join(" ")}" fill="${fill}"/>`);
+      o.push(`<rect x="${p.x + s}" y="${p.y}" width="${p.w - 2 * s}" height="4" fill="${STATUS_COLOR[n.status]}"/>`);
+      tx = p.x + 30; tw = p.w - 60;
+    } else if (shape === "capsule") {
+      o.push(`<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="${p.h / 2}" fill="${fill}"/>`);
+      o.push(`<rect x="${p.x + 13}" y="${p.y + p.h * .28}" width="4" height="${p.h * .44}" rx="2" fill="${STATUS_COLOR[n.status]}"/>`);
+      tx = p.x + 30; tw = p.w - 54;
+    } else {
+      o.push(`<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="14" fill="${fill}"${oldStroke}/>`);
+      o.push(`<rect x="${p.x}" y="${p.y + 6}" width="4" height="${p.h - 12}" rx="2" fill="${STATUS_COLOR[n.status]}"/>`);
+      if (shape === "ticket") [p.x, p.x + p.w].forEach(cx => o.push(`<circle cx="${cx}" cy="${p.y + p.h / 2}" r="9" fill="#232B37"/>`));
+      if (shape === "card") o.push(`<circle cx="${p.x - 1}" cy="${p.y + p.h / 2}" r="4.5" fill="#212833" stroke="#B9DBF6" stroke-width="2"/>`);
+    }
+    if (shape !== "capsule" && shape !== "ticket" && fanOf[id]) o.push(`<circle cx="${p.x + p.w + 1}" cy="${p.y + p.h / 2}" r="4.5" fill="#212833" stroke="#B9DBF6" stroke-width="2"/>`);
+    o.push(`<text x="${tx}" y="${p.y + 22}" font-family="${SANS}" font-size="11.5" font-weight="700" fill="#6E7889">${esc(id)}${n.topic ? "  ·  " + esc(n.topic) : ""}</text>`);
+    if (n.status !== "ok") o.push(`<text x="${p.x + p.w - (shape === "hex" ? 30 : 14)}" y="${p.y + 22}" text-anchor="end" font-family="${SANS}" font-size="11" font-weight="600" fill="${n.status === "stale" ? "#B5574A" : "#5C6676"}">${esc(LABEL[n.status])}</text>`);
+    const lines = wrap(n.decision, tw, `15.5px ${SERIF}`, Math.max(1, Math.floor((p.h - 36) / 21)));
+    lines.forEach((l, i) => o.push(`<text x="${tx}" y="${p.y + 44 + i * 21}" font-family="${SERIF}" font-size="15.5" fill="${old ? "#4B5566" : "#3A4556"}">${esc(l)}</text>`));
+  });
+  o.push("</svg>");
+  return { svg: o.join("\n"), W, H };
+}
+function exportImage(kind) {
+  $("#expmenu").hidden = true;
+  const g = graphSVG(); if (!g) { toast("Nothing to export yet."); return; }
+  const name = `decision-graph-${DATA.project.replace(/[^A-Za-z0-9_-]+/g, "-")}${asOfIdx != null ? "-" + DAYS[asOfIdx] : ""}`;
+  if (kind === "svg") { download(new Blob([g.svg], { type: "image/svg+xml" }), name + ".svg"); toast("Downloaded " + name + ".svg"); return; }
+  const img = new Image();
+  img.onload = () => {
+    const scale = Math.min(2, 12000 / Math.max(g.W, g.H));
+    const cv = document.createElement("canvas"); cv.width = Math.round(g.W * scale); cv.height = Math.round(g.H * scale);
+    const c = cv.getContext("2d"); c.scale(scale, scale); c.drawImage(img, 0, 0, g.W, g.H);
+    cv.toBlob(b => { if (b) { download(b, name + ".png"); toast("Downloaded " + name + ".png"); } else toast("Couldn't make the PNG; try SVG.", true); }, "image/png");
+  };
+  img.onerror = () => toast("Couldn't make the PNG; try SVG.", true);
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(g.svg);
+}
+$("#exp").onclick = e => { e.stopPropagation(); const m = $("#expmenu"); m.hidden = !m.hidden; if (!m.hidden) m.querySelector("button").focus(); };
+$("#expmenu").querySelectorAll("button").forEach(b => b.onclick = () => exportImage(b.dataset.k));
+document.addEventListener("pointerdown", e => { if (!e.target.closest("#expmenu, #exp")) $("#expmenu").hidden = true; });
+$("#expmenu").addEventListener("keydown", e => { if (e.key === "Escape") { $("#expmenu").hidden = true; $("#exp").focus(); } });
+
+// live: while `dg view` is running, new decisions emerge into the field as they're recorded
+const arrivedLive = new Set();   // everything that arrived while this page was open stays marked new
+async function poll() {
+  if (document.hidden) return;
+  try {
+    const v = await (await fetch(`api/version?t=${EDIT.token}`)).json();
+    if (v.v === DATA.version) return;
+    const fresh = await (await fetch(`api/data?t=${EDIT.token}`)).json();
+    const had = new Set(DATA.nodes.map(n => n.id));
+    const added = fresh.nodes.filter(n => !had.has(n.id) && n.status !== "rejected" && n.status !== "replaced");
+    added.forEach(n => arrivedLive.add(n.id));
+    fresh.nodes.forEach(n => { if (arrivedLive.has(n.id) && n.status !== "rejected" && n.status !== "replaced") n.new = true; });
+    FULL = fresh;
+    if (asOfIdx == null) { DATA = fresh; byId = Object.fromEntries(DATA.nodes.map(n => [n.id, n])); }
+    buildTimeline(); renderAreas();
+    if (asOfIdx != null) { if (added.length) toast(`${added.length} new decision${added.length > 1 ? "s" : ""} recorded. Move the timeline to the end to see them.`); return; }
+    renderStats(); renderEmpty(); render();
+    if (!selected) renderPanel();
+    if (added.length) {
+      toast(`${added.length} new decision${added.length > 1 ? "s" : ""} recorded: ${added.slice(0, 4).map(n => n.id).join(", ")}${added.length > 4 ? ", ..." : ""}`,
+            false, null, { label: "Show", run: () => select(added[0].id) });
+      setTimeout(() => fit(), 120);
+    }
+  } catch (e) { /* the server stopped; leave the page as it is */ }
+}
+if (EDIT && EDIT.live) setInterval(poll, 3500);
+
+renderAreas(); buildTimeline(); renderStats(); renderEmpty(); render(); renderPanel(); fit(true);
+</script>
+</body>
+</html>

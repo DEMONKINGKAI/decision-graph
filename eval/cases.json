@@ -1,0 +1,1335 @@
+{
+ "version": 1,
+ "cases": [
+  {
+   "name": "01_chained_reasons",
+   "description": "Decisions with explicit reasons that chain (offline -> SQLite -> Drizzle), a rejected alternative, and a standalone choice.",
+   "existing": [],
+   "turns": [
+    {
+     "role": "user",
+     "text": "We're starting a small notes app. Don't write code yet, just confirm decisions in one line each. First: the app has to work fully offline, that's non-negotiable."
+    },
+    {
+     "role": "assistant",
+     "text": "Confirmed: fully offline is a hard requirement."
+    },
+    {
+     "role": "user",
+     "text": "Because of the offline requirement, store everything locally in SQLite, not a hosted database."
+    },
+    {
+     "role": "assistant",
+     "text": "Confirmed: local SQLite storage, chosen because the app must work offline."
+    },
+    {
+     "role": "user",
+     "text": "Since we're on SQLite, use Drizzle as the ORM. I looked at Prisma but it's too heavy for this."
+    },
+    {
+     "role": "assistant",
+     "text": "Confirmed: Drizzle ORM on top of SQLite; Prisma rejected as too heavy."
+    },
+    {
+     "role": "user",
+     "text": "And pnpm for packages."
+    },
+    {
+     "role": "assistant",
+     "text": "Confirmed: pnpm as the package manager."
+    }
+   ],
+   "gold": {
+    "decisions": [
+     {
+      "id": "g1",
+      "match": [
+       [
+        "offline"
+       ]
+      ],
+      "decided_by": "user"
+     },
+     {
+      "id": "g2",
+      "match": [
+       [
+        "sqlite"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": [
+       "offline"
+      ]
+     },
+     {
+      "id": "g3",
+      "match": [
+       [
+        "drizzle"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": [
+       "sqlite",
+       "prisma",
+       "heavy"
+      ]
+     },
+     {
+      "id": "g4",
+      "match": [
+       [
+        "pnpm"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": null
+     }
+    ],
+    "links": [
+     [
+      "depends",
+      "g2",
+      "g1"
+     ],
+     [
+      "depends",
+      "g3",
+      "g2"
+     ]
+    ],
+    "rejected": [
+     {
+      "of": "g3",
+      "match": [
+       "prisma"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "02_same_batch_reversal",
+   "description": "A decision and its reversal in the same conversation; the reversal must use supersedes, not depends_on.",
+   "existing": [],
+   "turns": [
+    {
+     "role": "user",
+     "text": "For the habit tracker: users must be able to log in with email and password."
+    },
+    {
+     "role": "assistant",
+     "text": "Noted: email + password login."
+    },
+    {
+     "role": "user",
+     "text": "Use Postgres for storage."
+    },
+    {
+     "role": "assistant",
+     "text": "Noted: Postgres."
+    },
+    {
+     "role": "user",
+     "text": "Hmm, actually drop email/password. Magic links only, I don't want to store passwords."
+    },
+    {
+     "role": "assistant",
+     "text": "Understood: magic-link login only, replacing email + password, so no passwords are stored."
+    }
+   ],
+   "gold": {
+    "decisions": [
+     {
+      "id": "g1",
+      "match": [
+       [
+        "password"
+       ]
+      ],
+      "decided_by": "user",
+      "replaced": true,
+      "reason": null
+     },
+     {
+      "id": "g2",
+      "match": [
+       [
+        "postgres"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": null
+     },
+     {
+      "id": "g3",
+      "match": [
+       [
+        "magic link",
+        "magic-link"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": [
+       "password"
+      ]
+     }
+    ],
+    "links": [
+     [
+      "supersedes",
+      "g3",
+      "g1"
+     ]
+    ],
+    "forbidden_links": [
+     [
+      "depends",
+      "g3",
+      "g1"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "03_accept_by_reference",
+   "description": "User accepts Claude's recommendation without naming it; a vague 'sounds good' after options WITHOUT a recommendation is not a decision.",
+   "existing": [],
+   "turns": [
+    {
+     "role": "user",
+     "text": "Tailwind or CSS modules for styling the dashboard? What do you recommend?"
+    },
+    {
+     "role": "assistant",
+     "text": "I'd recommend Tailwind CSS here: you'll iterate on layouts a lot, and utility classes keep that fast. CSS modules are fine but slower to iterate with."
+    },
+    {
+     "role": "user",
+     "text": "ok, go with your suggestion."
+    },
+    {
+     "role": "assistant",
+     "text": "Done: Tailwind CSS for styling."
+    },
+    {
+     "role": "user",
+     "text": "Testing: Vitest or Jest?"
+    },
+    {
+     "role": "assistant",
+     "text": "Vitest. It shares the Vite config, so there's nothing extra to set up, and it's faster."
+    },
+    {
+     "role": "user",
+     "text": "do that."
+    },
+    {
+     "role": "assistant",
+     "text": "Vitest it is."
+    },
+    {
+     "role": "user",
+     "text": "For auth, what are the options?"
+    },
+    {
+     "role": "assistant",
+     "text": "Main options: Clerk (hosted, fastest to set up), Auth.js (self-hosted, free), or Supabase Auth (if we'd use Supabase anyway). Each fits depending on budget and how much control you want."
+    },
+    {
+     "role": "user",
+     "text": "sounds good, I'll think about it."
+    },
+    {
+     "role": "assistant",
+     "text": "Sure, let me know when you've decided."
+    }
+   ],
+   "gold": {
+    "decisions": [
+     {
+      "id": "g1",
+      "match": [
+       [
+        "tailwind"
+       ]
+      ],
+      "decided_by": "assistant_accepted",
+      "reason": [
+       "iterat",
+       "layout",
+       "utility"
+      ]
+     },
+     {
+      "id": "g2",
+      "match": [
+       [
+        "vitest"
+       ]
+      ],
+      "decided_by": "assistant_accepted",
+      "reason": [
+       "vite config",
+       "config",
+       "faster",
+       "fast"
+      ]
+     }
+    ],
+    "traps": [
+     {
+      "terms": [
+       "clerk",
+       "auth.js",
+       "supabase"
+      ],
+      "why": "options listed without a recommendation; user deferred"
+     }
+    ]
+   }
+  },
+  {
+   "name": "04_noise_and_traps",
+   "description": "One real decision among rejections, brainstorming, debugging steps, undecided leanings and wishes.",
+   "existing": [],
+   "turns": [
+    {
+     "role": "user",
+     "text": "Should we add Redis for caching the feed?"
+    },
+    {
+     "role": "assistant",
+     "text": "Probably not yet: the feed query is fast enough and Redis adds an extra service to run."
+    },
+    {
+     "role": "user",
+     "text": "Nah, agreed, not needed right now."
+    },
+    {
+     "role": "assistant",
+     "text": "Ok, no cache for now."
+    },
+    {
+     "role": "user",
+     "text": "Just brainstorming: a React Native app later could be cool. Not deciding anything."
+    },
+    {
+     "role": "assistant",
+     "text": "Could be a nice follow-up once the web app is stable."
+    },
+    {
+     "role": "user",
+     "text": "The dev server crashes on start. Try clearing node_modules and reinstalling."
+    },
+    {
+     "role": "assistant",
+     "tool": {
+      "name": "Bash",
+      "arg": "rm -rf node_modules && pnpm install"
+     }
+    },
+    {
+     "role": "user",
+     "tool_result": "Packages: +412\nDone in 9.1s"
+    },
+    {
+     "role": "assistant",
+     "text": "Reinstalled; the dev server starts now."
+    },
+    {
+     "role": "user",
+     "text": "I'm leaning towards Sentry for error tracking but haven't decided."
+    },
+    {
+     "role": "assistant",
+     "text": "Sentry is a solid default; happy to set it up when you decide."
+    },
+    {
+     "role": "user",
+     "text": "Also, the favicon is ugly, someone should redo it eventually."
+    },
+    {
+     "role": "assistant",
+     "text": "Noted."
+    },
+    {
+     "role": "user",
+     "text": "One real thing: validate every API request body with Zod, so types match on both ends."
+    },
+    {
+     "role": "assistant",
+     "text": "Confirmed: Zod validation on all API request bodies."
+    }
+   ],
+   "gold": {
+    "decisions": [
+     {
+      "id": "g1",
+      "match": [
+       [
+        "zod"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": [
+       "type",
+       "both ends"
+      ]
+     }
+    ],
+    "traps": [
+     {
+      "terms": [
+       "redis"
+      ],
+      "allow_negated": true,
+      "why": "rejected; 'no Redis for now' is acceptable"
+     },
+     {
+      "terms": [
+       "react native"
+      ],
+      "why": "brainstorm"
+     },
+     {
+      "terms": [
+       "node_modules",
+       "reinstall"
+      ],
+      "why": "debugging step"
+     },
+     {
+      "terms": [
+       "sentry"
+      ],
+      "why": "only leaning"
+     },
+     {
+      "terms": [
+       "favicon"
+      ],
+      "why": "wish, no decision"
+     }
+    ]
+   }
+  },
+  {
+   "name": "05_cross_session_changes",
+   "description": "Changes to decisions stored in earlier sessions: replacements must point at the existing ids; no duplicate of an unchanged decision.",
+   "existing": [
+    {
+     "id": "D-1",
+     "decision": "Use Tailwind CSS for styling across the whole project.",
+     "rationale": [],
+     "alternatives_rejected": [],
+     "supersedes": null,
+     "depends_on": [],
+     "restores": [],
+     "decided_by": "user",
+     "confidence": 0.9,
+     "source": {}
+    },
+    {
+     "id": "D-2",
+     "decision": "Use pnpm as the package manager.",
+     "rationale": [],
+     "alternatives_rejected": [],
+     "supersedes": null,
+     "depends_on": [],
+     "restores": [],
+     "decided_by": "user",
+     "confidence": 0.9,
+     "source": {}
+    },
+    {
+     "id": "D-3",
+     "decision": "The project has zero budget, so no paid services.",
+     "rationale": [],
+     "alternatives_rejected": [],
+     "supersedes": null,
+     "depends_on": [],
+     "restores": [],
+     "decided_by": "user",
+     "confidence": 0.9,
+     "source": {}
+    },
+    {
+     "id": "D-4",
+     "decision": "Host the app on the Cloudflare Pages free tier.",
+     "rationale": [
+      "zero budget"
+     ],
+     "alternatives_rejected": [],
+     "supersedes": null,
+     "depends_on": [
+      "D-3"
+     ],
+     "restores": [],
+     "decided_by": "user",
+     "confidence": 0.9,
+     "source": {}
+    },
+    {
+     "id": "D-5",
+     "decision": "Use Vitest for unit tests.",
+     "rationale": [],
+     "alternatives_rejected": [],
+     "supersedes": null,
+     "depends_on": [],
+     "restores": [],
+     "decided_by": "user",
+     "confidence": 0.9,
+     "source": {}
+    }
+   ],
+   "turns": [
+    {
+     "role": "user",
+     "text": "Switch from pnpm to bun."
+    },
+    {
+     "role": "assistant",
+     "text": "Ok: bun replaces pnpm as the package manager."
+    },
+    {
+     "role": "user",
+     "text": "Good news, we got a small grant, so paid services are fine now."
+    },
+    {
+     "role": "assistant",
+     "text": "Noted: paid services are allowed now."
+    },
+    {
+     "role": "user",
+     "text": "Keep Tailwind, but only for the marketing site. The app itself uses CSS modules."
+    },
+    {
+     "role": "assistant",
+     "text": "Got it: CSS modules for the app, Tailwind only for the marketing site."
+    },
+    {
+     "role": "user",
+     "text": "And yes we're still on Vitest, no change there."
+    },
+    {
+     "role": "assistant",
+     "text": "Vitest stays."
+    }
+   ],
+   "gold": {
+    "decisions": [
+     {
+      "id": "g1",
+      "match": [
+       [
+        "bun"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": null
+     },
+     {
+      "id": "g2",
+      "match": [
+       [
+        "paid"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": [
+       "grant"
+      ]
+     },
+     {
+      "id": "g3",
+      "match": [
+       [
+        "marketing"
+       ]
+      ],
+      "decided_by": "user"
+     },
+     {
+      "id": "g4",
+      "match": [
+       [
+        "css modules",
+        "css module"
+       ]
+      ],
+      "decided_by": "user",
+      "optional": true
+     }
+    ],
+    "links": [
+     [
+      "supersedes",
+      "g1",
+      "D-2"
+     ],
+     [
+      "supersedes",
+      "g2",
+      "D-3"
+     ],
+     [
+      "supersedes",
+      "g3",
+      "D-1"
+     ]
+    ],
+    "no_duplicate": [
+     {
+      "of": "D-5",
+      "match": [
+       "vitest"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "06_restore_and_amend",
+   "description": "A replaced decision comes back (restores), a reason is added to an existing decision (amendment), and several decisions in one sentence.",
+   "existing": [
+    {
+     "id": "D-1",
+     "decision": "The app must work fully offline.",
+     "rationale": [],
+     "alternatives_rejected": [],
+     "supersedes": null,
+     "depends_on": [],
+     "restores": [],
+     "decided_by": "user",
+     "confidence": 0.9,
+     "source": {}
+    },
+    {
+     "id": "D-2",
+     "decision": "The app is online-only; offline support is dropped.",
+     "rationale": [],
+     "alternatives_rejected": [],
+     "supersedes": "D-1",
+     "depends_on": [],
+     "restores": [],
+     "decided_by": "user",
+     "confidence": 0.9,
+     "source": {}
+    },
+    {
+     "id": "D-3",
+     "decision": "Store data locally in SQLite.",
+     "rationale": [
+      "offline requirement"
+     ],
+     "alternatives_rejected": [],
+     "supersedes": null,
+     "depends_on": [
+      "D-1"
+     ],
+     "restores": [],
+     "decided_by": "user",
+     "confidence": 0.9,
+     "source": {}
+    },
+    {
+     "id": "D-4",
+     "decision": "Use Drizzle ORM as the data layer.",
+     "rationale": [
+      "we use SQLite"
+     ],
+     "alternatives_rejected": [],
+     "supersedes": null,
+     "depends_on": [
+      "D-3"
+     ],
+     "restores": [],
+     "decided_by": "user",
+     "confidence": 0.9,
+     "source": {}
+    }
+   ],
+   "turns": [
+    {
+     "role": "user",
+     "text": "Bring offline support back, it's a hard requirement again after the user interviews."
+    },
+    {
+     "role": "assistant",
+     "text": "Understood: offline is a requirement again."
+    },
+    {
+     "role": "user",
+     "text": "By the way, the other reason we picked Drizzle was its type safety."
+    },
+    {
+     "role": "assistant",
+     "text": "Good to note: Drizzle was also chosen for type safety."
+    },
+    {
+     "role": "user",
+     "text": "Use Vitest for unit tests and Playwright for e2e, and put all tests under /tests."
+    },
+    {
+     "role": "assistant",
+     "text": "Confirmed: Vitest, Playwright, all tests in /tests."
+    }
+   ],
+   "gold": {
+    "decisions": [
+     {
+      "id": "g1",
+      "match": [
+       [
+        "offline"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": [
+       "interview"
+      ]
+     },
+     {
+      "id": "g2",
+      "match": [
+       [
+        "vitest"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": null
+     },
+     {
+      "id": "g3",
+      "match": [
+       [
+        "playwright"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": null
+     },
+     {
+      "id": "g4",
+      "match": [
+       [
+        "/tests",
+        "tests folder",
+        "tests directory",
+        "test folder"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": null
+     }
+    ],
+    "links": [
+     [
+      "supersedes",
+      "g1",
+      "D-2"
+     ],
+     [
+      "restores",
+      "g1",
+      "D-1"
+     ]
+    ],
+    "amendments": [
+     {
+      "target": "D-4",
+      "reason": [
+       "type"
+      ]
+     }
+    ],
+    "no_duplicate": [
+     {
+      "of": "D-4",
+      "match": [
+       "drizzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "07_buried_in_ramble",
+   "description": "One decision buried in a long message full of postponements and open questions, followed by a long code-heavy assistant turn.",
+   "existing": [],
+   "turns": [
+    {
+     "role": "user",
+     "text": "ok so a bunch of random thoughts after looking at the notes app again. first, the editor feels cramped on small laptop screens, maybe we look at that later, not urgent. the sidebar gets slow with lots of notes but honestly that's a future problem. and yeah, let's use date-fns for all date formatting, moment is way too big. anyway I was also wondering whether dark mode is worth doing early, genuinely not sure yet. also the onboarding copy reads a bit stiff, someone should rewrite it eventually. that's all for now I think."
+    },
+    {
+     "role": "assistant",
+     "text": "Got it, date-fns for date formatting. Here's how the helper would look:\n\n```ts\nimport { format, parseISO } from 'date-fns';\n\nexport function formatNoteDate(iso: string): string {\n  return format(parseISO(iso), 'd MMM yyyy, HH:mm');\n}\n\nexport function isToday(iso: string): boolean {\n  const d = parseISO(iso);\n  const now = new Date();\n  return d.toDateString() === now.toDateString();\n}\n```\n\nThe other points (editor width, sidebar performance, dark mode, onboarding copy) I've left as open items."
+    }
+   ],
+   "gold": {
+    "decisions": [
+     {
+      "id": "g1",
+      "match": [
+       [
+        "date-fns",
+        "date fns",
+        "datefns"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": [
+       "moment",
+       "big",
+       "size"
+      ]
+     }
+    ],
+    "rejected": [
+     {
+      "of": "g1",
+      "match": [
+       "moment"
+      ]
+     }
+    ],
+    "traps": [
+     {
+      "terms": [
+       "dark mode"
+      ],
+      "why": "undecided"
+     },
+     {
+      "terms": [
+       "sidebar"
+      ],
+      "why": "observation, postponed"
+     },
+     {
+      "terms": [
+       "onboarding"
+      ],
+      "why": "wish"
+     },
+     {
+      "terms": [
+       "cramped",
+       "editor width",
+       "small laptop"
+      ],
+      "why": "postponed"
+     }
+    ]
+   }
+  },
+  {
+   "name": "08_german_mixed",
+   "description": "Decisions stated in German, mixed with English; extraction must still find them and the reasons.",
+   "existing": [],
+   "turns": [
+    {
+     "role": "user",
+     "text": "Für das Abrechnungs-Tool: Lass uns Postgres nehmen, weil wir mehrere gleichzeitige Schreibzugriffe haben."
+    },
+    {
+     "role": "assistant",
+     "text": "Okay: Postgres, wegen der gleichzeitigen Schreibzugriffe."
+    },
+    {
+     "role": "user",
+     "text": "Docker lassen wir im ersten Schritt weg, wir deployen direkt auf Render."
+    },
+    {
+     "role": "assistant",
+     "text": "Verstanden: kein Docker für den Anfang, Deployment direkt auf Render."
+    },
+    {
+     "role": "user",
+     "text": "Was meinst du zu GraphQL?"
+    },
+    {
+     "role": "assistant",
+     "text": "Für ein internes Tool mit wenigen Clients ist REST einfacher. GraphQL würde ich erst bei vielen unterschiedlichen Frontends nehmen."
+    },
+    {
+     "role": "user",
+     "text": "ok, dann REST wie du sagst."
+    },
+    {
+     "role": "assistant",
+     "text": "REST also."
+    }
+   ],
+   "gold": {
+    "decisions": [
+     {
+      "id": "g1",
+      "match": [
+       [
+        "postgres",
+        "postgresql"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": [
+       "concurrent",
+       "simultaneous",
+       "gleichzeitig",
+       "schreib",
+       "write"
+      ]
+     },
+     {
+      "id": "g2",
+      "match": [
+       [
+        "render"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": null
+     },
+     {
+      "id": "g3",
+      "match": [
+       [
+        "rest"
+       ]
+      ],
+      "decided_by": "assistant_accepted",
+      "reason": [
+       "simple",
+       "einfach",
+       "internal",
+       "intern",
+       "few client",
+       "frontends"
+      ]
+     },
+     {
+      "id": "g4",
+      "match": [
+       [
+        "docker"
+       ]
+      ],
+      "decided_by": "user",
+      "optional": true
+     }
+    ],
+    "traps": [
+     {
+      "terms": [
+       "graphql"
+      ],
+      "allow_negated": true,
+      "why": "rejected option; only allowed as 'not GraphQL'"
+     }
+    ],
+    "rejected": [
+     {
+      "of": "g3",
+      "match": [
+       "graphql"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "09_mid_coding",
+   "description": "Decisions that emerge in the middle of a tool-heavy coding session, including an accepted proposal from Claude, between transient actions.",
+   "existing": [],
+   "turns": [
+    {
+     "role": "user",
+     "text": "Add an endpoint that lists a user's invoices."
+    },
+    {
+     "role": "assistant",
+     "tool": {
+      "name": "Read",
+      "arg": "src/routes/index.ts"
+     }
+    },
+    {
+     "role": "user",
+     "tool_result": "export const routes = [\n  { path: '/health', handler: health },\n];"
+    },
+    {
+     "role": "assistant",
+     "text": "Before I add it: should routes be versioned? I'd suggest prefixing everything with /api/v1 so we can change the API later without breaking clients."
+    },
+    {
+     "role": "user",
+     "text": "yes good idea, do that for all routes."
+    },
+    {
+     "role": "assistant",
+     "tool": {
+      "name": "Edit",
+      "arg": "src/routes/index.ts"
+     }
+    },
+    {
+     "role": "user",
+     "tool_result": "File updated."
+    },
+    {
+     "role": "assistant",
+     "text": "Added GET /api/v1/users/:id/invoices and moved /health under /api/v1."
+    },
+    {
+     "role": "user",
+     "text": "run the tests"
+    },
+    {
+     "role": "assistant",
+     "tool": {
+      "name": "Bash",
+      "arg": "pnpm test"
+     }
+    },
+    {
+     "role": "user",
+     "tool_result": "FAIL src/routes/invoices.test.ts\n  expected 200, received 404"
+    },
+    {
+     "role": "assistant",
+     "text": "One test fails because it still calls the old path. Fixing the test."
+    },
+    {
+     "role": "assistant",
+     "tool": {
+      "name": "Edit",
+      "arg": "src/routes/invoices.test.ts"
+     }
+    },
+    {
+     "role": "user",
+     "tool_result": "File updated."
+    },
+    {
+     "role": "assistant",
+     "tool": {
+      "name": "Bash",
+      "arg": "pnpm test"
+     }
+    },
+    {
+     "role": "user",
+     "tool_result": "PASS 14 tests"
+    },
+    {
+     "role": "assistant",
+     "text": "All 14 tests pass."
+    },
+    {
+     "role": "user",
+     "text": "Also from now on database columns are snake_case, the JS side stays camelCase. Map between them in the repository layer."
+    },
+    {
+     "role": "assistant",
+     "text": "Understood: snake_case columns, camelCase in code, mapping in the repository layer."
+    }
+   ],
+   "gold": {
+    "decisions": [
+     {
+      "id": "g1",
+      "match": [
+       [
+        "/api/v1",
+        "api/v1",
+        "versioned",
+        "versioning"
+       ]
+      ],
+      "decided_by": "assistant_accepted",
+      "reason": [
+       "change",
+       "break",
+       "client",
+       "later"
+      ]
+     },
+     {
+      "id": "g2",
+      "match": [
+       [
+        "snake_case",
+        "snake case"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": null
+     },
+     {
+      "id": "g3",
+      "match": [
+       [
+        "repository layer"
+       ]
+      ],
+      "decided_by": "user",
+      "optional": true
+     }
+    ],
+    "traps": [
+     {
+      "terms": [
+       "run the tests",
+       "pnpm test"
+      ],
+      "why": "transient action"
+     },
+     {
+      "terms": [
+       "invoices.test",
+       "old path"
+      ],
+      "why": "test fix, not a decision"
+     }
+    ]
+   }
+  },
+  {
+   "name": "10_real_project_patterns",
+   "description": "Patterns from a real project (Threadfall): tuning that rests on an earlier choice without a stated reason, several same-kind changes made together, a widening scope, and a work order that is not a decision. A feature built as part of a plan must not rest on the plan.",
+   "existing": [],
+   "turns": [
+    {
+     "role": "user",
+     "text": "I don't have Claude API access, so for action classification let's not call any LLM. Keyword matching is enough."
+    },
+    {
+     "role": "assistant",
+     "text": "Done: the action classifier now uses keyword matching only, no API call."
+    },
+    {
+     "role": "user",
+     "text": "Let's build the DAG engine first and do the API wiring after that."
+    },
+    {
+     "role": "assistant",
+     "text": "Starting with the DAG engine."
+    },
+    {
+     "role": "user",
+     "text": "I typed 'I flee from the guards' and it went to npc_interaction. Flee, retreat and run away should be combat_outcome, and rest or make camp should be resource_use."
+    },
+    {
+     "role": "assistant",
+     "text": "Fixed: flee, retreat and run away now map to combat_outcome; rest, make camp and recover map to resource_use."
+    },
+    {
+     "role": "user",
+     "text": "For the narrator, use the HuggingFace Inference API."
+    },
+    {
+     "role": "assistant",
+     "text": "The narrator now calls the HuggingFace InferenceClient."
+    },
+    {
+     "role": "assistant",
+     "text": "Mistral-7B-Instruct isn't responding on the free tier any more. I suggest switching the narrator model to Qwen/Qwen2.5-7B-Instruct, which is available."
+    },
+    {
+     "role": "user",
+     "text": "ok do that"
+    },
+    {
+     "role": "assistant",
+     "text": "Switched the narrator model to Qwen/Qwen2.5-7B-Instruct."
+    },
+    {
+     "role": "user",
+     "text": "From your improvement list, implement Tier 1 now and leave Tiers 2 to 4 for later."
+    },
+    {
+     "role": "assistant",
+     "text": "Implementing Tier 1; Tiers 2 to 4 deferred."
+    },
+    {
+     "role": "assistant",
+     "text": "Tier 1, item 3: the skills field has no UI. I suggest a chip grid of the 18 D&D skills on character creation, capped at 3 picks."
+    },
+    {
+     "role": "user",
+     "text": "yes do that"
+    },
+    {
+     "role": "assistant",
+     "text": "Added the skills chip grid, capped at 3 selections."
+    },
+    {
+     "role": "user",
+     "text": "Actually do Tier 2 as well."
+    },
+    {
+     "role": "assistant",
+     "text": "Tier 2 added."
+    },
+    {
+     "role": "user",
+     "text": "And Tiers 3 and 4 too, let's just do all of it."
+    },
+    {
+     "role": "assistant",
+     "text": "All four tiers are now in scope."
+    }
+   ],
+   "gold": {
+    "decisions": [
+     {
+      "id": "g1",
+      "match": [
+       [
+        "keyword"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": [
+       "api access"
+      ]
+     },
+     {
+      "id": "g2",
+      "match": [
+       [
+        "flee",
+        "retreat",
+        "run away"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": null
+     },
+     {
+      "id": "g3",
+      "match": [
+       [
+        "huggingface",
+        "hugging face"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": null
+     },
+     {
+      "id": "g4",
+      "match": [
+       [
+        "qwen"
+       ]
+      ],
+      "decided_by": "assistant_accepted",
+      "reason": [
+       "mistral",
+       "responding",
+       "available"
+      ]
+     },
+     {
+      "id": "g5",
+      "match": [
+       [
+        "all four",
+        "all tiers",
+        "all of",
+        "tiers 3 and 4",
+        "tier 4",
+        "every tier"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": null
+     },
+     {
+      "id": "g6",
+      "match": [
+       [
+        "tier 1"
+       ]
+      ],
+      "decided_by": "user",
+      "reason": null,
+      "optional": true
+     },
+     {
+      "id": "g7",
+      "match": [
+       [
+        "chip",
+        "skills"
+       ]
+      ],
+      "decided_by": "assistant_accepted",
+      "reason": null
+     },
+     {
+      "id": "g8",
+      "match": [
+       [
+        "at most 3",
+        "capped at 3",
+        "3 picks",
+        "3 selections",
+        "three"
+       ]
+      ],
+      "decided_by": "assistant_accepted",
+      "reason": null,
+      "optional": true
+     }
+    ],
+    "links": [
+     [
+      "depends",
+      "g2",
+      "g1"
+     ],
+     [
+      "depends",
+      "g4",
+      "g3"
+     ]
+    ],
+    "rejected": [
+     {
+      "of": "g4",
+      "match": [
+       "mistral"
+      ]
+     }
+    ],
+    "traps": [
+     {
+      "terms": [
+       "dag engine first",
+       "engine first",
+       "api wiring after"
+      ],
+      "why": "order of work, not a lasting decision"
+     }
+    ],
+    "forbidden_links": [
+     [
+      "depends",
+      "g7",
+      "g6"
+     ],
+     [
+      "depends",
+      "g7",
+      "g5"
+     ]
+    ]
+   }
+  }
+ ]
+}

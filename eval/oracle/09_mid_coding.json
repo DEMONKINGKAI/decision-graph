@@ -1,0 +1,14 @@
+[
+ {
+  "decision": "Prefix all API routes with /api/v1.",
+  "decided_by": "assistant_accepted",
+  "rationale": [
+   "Lets the API change later without breaking clients."
+  ]
+ },
+ {
+  "decision": "Database columns are snake_case; code stays camelCase, mapped in the repository layer.",
+  "decided_by": "user",
+  "rationale": []
+ }
+]

@@ -1,0 +1,12 @@
+[
+ {
+  "decision": "Use date-fns for all date formatting.",
+  "alternatives_rejected": [
+   "moment (too big)"
+  ],
+  "decided_by": "user",
+  "rationale": [
+   "moment is way too big."
+  ]
+ }
+]

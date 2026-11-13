@@ -1,0 +1,35 @@
+[
+ {
+  "decision": "The app must work fully offline again.",
+  "supersedes": "D-2",
+  "restores": [
+   "D-1"
+  ],
+  "decided_by": "user",
+  "rationale": [
+   "It's a hard requirement again after the user interviews."
+  ]
+ },
+ {
+  "amends": "D-4",
+  "decision": "Use Drizzle ORM as the data layer.",
+  "rationale": [
+   "type safety"
+  ]
+ },
+ {
+  "decision": "Use Vitest for unit tests.",
+  "decided_by": "user",
+  "rationale": []
+ },
+ {
+  "decision": "Use Playwright for e2e tests.",
+  "decided_by": "user",
+  "rationale": []
+ },
+ {
+  "decision": "All tests live under /tests.",
+  "decided_by": "user",
+  "rationale": []
+ }
+]

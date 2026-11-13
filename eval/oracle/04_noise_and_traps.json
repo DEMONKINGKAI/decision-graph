@@ -1,0 +1,14 @@
+[
+ {
+  "decision": "No Redis cache for the feed for now.",
+  "decided_by": "user",
+  "rationale": []
+ },
+ {
+  "decision": "Validate every API request body with Zod.",
+  "decided_by": "user",
+  "rationale": [
+   "Types match on both ends."
+  ]
+ }
+]

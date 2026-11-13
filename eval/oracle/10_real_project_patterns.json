@@ -1,0 +1,51 @@
+[
+ {
+  "key": "n1",
+  "decision": "Action classification uses keyword matching only, with no LLM or API call.",
+  "decided_by": "user",
+  "rationale": [
+   "The user has no Claude API access."
+  ]
+ },
+ {
+  "key": "n2",
+  "decision": "The classifier maps flee, retreat and run away to combat_outcome, and rest, make camp and recover to resource_use.",
+  "depends_on": [
+   "n1"
+  ],
+  "decided_by": "user",
+  "rationale": []
+ },
+ {
+  "key": "n3",
+  "decision": "The narrator uses the HuggingFace Inference API.",
+  "decided_by": "user",
+  "rationale": []
+ },
+ {
+  "key": "n4",
+  "decision": "The narrator model is Qwen/Qwen2.5-7B-Instruct.",
+  "depends_on": [
+   "n3"
+  ],
+  "alternatives_rejected": [
+   "Mistral-7B-Instruct"
+  ],
+  "decided_by": "assistant_accepted",
+  "rationale": [
+   "Mistral-7B-Instruct stopped responding on the free tier; Qwen is available."
+  ]
+ },
+ {
+  "key": "n5",
+  "decision": "Implement all four tiers of the improvement list now.",
+  "decided_by": "user",
+  "rationale": []
+ },
+ {
+  "key": "n6",
+  "decision": "Character creation selects skills from a chip grid of the 18 D&D skills, capped at 3.",
+  "decided_by": "assistant_accepted",
+  "rationale": []
+ }
+]

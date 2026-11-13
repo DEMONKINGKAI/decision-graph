@@ -1,0 +1,39 @@
+[
+ {
+  "key": "n1",
+  "decision": "The app must work fully offline.",
+  "decided_by": "user",
+  "rationale": []
+ },
+ {
+  "key": "n2",
+  "decision": "Store everything locally in SQLite.",
+  "depends_on": [
+   "n1"
+  ],
+  "decided_by": "user",
+  "rationale": [
+   "The app must work offline."
+  ]
+ },
+ {
+  "key": "n3",
+  "decision": "Use Drizzle as the ORM.",
+  "depends_on": [
+   "n2"
+  ],
+  "alternatives_rejected": [
+   "Prisma (too heavy)"
+  ],
+  "decided_by": "user",
+  "rationale": [
+   "We're on SQLite."
+  ]
+ },
+ {
+  "key": "n4",
+  "decision": "Use pnpm as the package manager.",
+  "decided_by": "user",
+  "rationale": []
+ }
+]
